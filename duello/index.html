@@ -386,7 +386,7 @@ function updateGame(dt) {
     spawnTimer=diff.spawnInterval+Math.random()*0.32;
   }
 
-  const H=canvas.height;
+  const W=canvas.width, H=canvas.height;
   items=items.filter(item=>{
     if (item.collected){ item.collectAnim+=dt; return item.collectAnim<0.18; }
     item.y+=diff.fallSpeed*dt;
