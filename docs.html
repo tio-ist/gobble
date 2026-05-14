@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GOBBLE — Technical Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0A0A0A;
+    --bg: #f7f7f4;
+    --blue: #1502FF;
+    --pink: #F83098;
+    --yellow: #FEE52A;
+    --code-bg: #1a1a1a;
+    --code-fg: #e8e8e8;
+    --muted: #555;
+    --border: #ddd;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+    font-size: 16px;
+  }
+  a { color: var(--blue); }
+  a:hover { text-decoration: underline; }
+
+  /* Layout */
+  .page { max-width: 820px; margin: 0 auto; padding: 60px 28px 120px; }
+  .header {
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 32px;
+    margin-bottom: 56px;
+  }
+  .header h1 {
+    font-size: 54px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .header .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 10px;
+  }
+  .header .links { margin-top: 20px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .header .links a {
+    display: inline-block;
+    background: var(--ink);
+    color: #fff;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+  .header .links a.ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .header .links a:hover { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  /* Sections */
+  section { margin-bottom: 64px; }
+  h2 {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    border-left: 4px solid var(--yellow);
+    padding-left: 14px;
+    margin-bottom: 20px;
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 28px 0 10px;
+    color: var(--ink);
+  }
+  p { margin-bottom: 14px; }
+  ul, ol { padding-left: 22px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 22px 24px;
+    overflow-x: auto;
+    margin: 16px 0 22px;
+    border-left: 3px solid var(--blue);
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: #e8e8e4;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* Comment style in code */
+  .cm { color: #6a7a7a; }
+  .kw { color: #FEE52A; }
+  .str { color: #F83098; }
+  .fn { color: #88ccff; }
+
+  /* Comparison table */
+  .compare {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 22px;
+    font-size: 14px;
+  }
+  .compare th {
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--ink);
+  }
+  .compare th:nth-child(2) { background: #ffe8f2; }
+  .compare th:nth-child(3) { background: #fff6cc; }
+  .compare td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .compare td:nth-child(2) { background: #fffafc; }
+  .compare td:nth-child(3) { background: #fffef5; }
+  .compare .label { font-weight: 700; color: var(--muted); font-size: 13px; }
+
+  /* Callout */
+  .callout {
+    border: 2px solid var(--blue);
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 14px;
+    background: #f0f0ff;
+  }
+  .callout strong { color: var(--blue); }
+  .callout.warn { border-color: var(--pink); background: #fff0f6; }
+  .callout.warn strong { color: var(--pink); }
+
+  /* State machine diagram */
+  .state-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin: 18px 0;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .state {
+    background: var(--ink);
+    color: #fff;
+    padding: 8px 16px;
+    letter-spacing: 0.04em;
+  }
+  .state.pink { background: var(--pink); color: #fff; }
+  .state.blue { background: var(--blue); color: #fff; }
+  .arrow {
+    padding: 0 10px;
+    color: var(--muted);
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding-top: 28px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <h1>GOBBLE</h1>
+    <p class="subtitle">Technical Documentation — gobble.tio.ist</p>
+    <nav class="links">
+      <a href="/gobble/">Play Solo</a>
+      <a href="/gobble/duello/">Play Duello</a>
+      <a class="ghost" href="https://github.com/tio-ist/gobble">GitHub</a>
+    </nav>
+  </header>
+
+  <!-- Purpose -->
+  <section>
+    <h2>What is GOBBLE?</h2>
+    <p>
+      GOBBLE is a webcam-based arcade game built for the tio.ist co-working space in Kadıköy.
+      Players eat falling pixel-art food items by opening their mouths in front of a webcam.
+      There is no keyboard, no controller — your face <em>is</em> the input.
+    </p>
+    <p>
+      It runs entirely in the browser as a single HTML file with no build step, no dependencies
+      served from npm, and no backend. Every sprite, sound, and UI element is generated at runtime
+      in JavaScript.
+    </p>
+    <p>Two modes exist:</p>
+    <ul>
+      <li><strong>Solo</strong> (<code>/gobble/</code>) — one player, score attack with a local leaderboard.</li>
+      <li><strong>Duello</strong> (<code>/gobble/duello/</code>) — two players side by side, competing for 45 seconds.</li>
+    </ul>
+  </section>
+
+  <!-- Technology -->
+  <section>
+    <h2>Technology Stack</h2>
+
+    <h3>MediaPipe FaceLandmarker</h3>
+    <p>
+      Face detection runs on the <a href="https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker">MediaPipe FaceLandmarker</a>
+      task (WASM + WebGL GPU delegate). It outputs 478 landmarks per detected face.
+      Key landmarks used:
+    </p>
+    <ul>
+      <li><strong>Landmark 4</strong> — nose tip. Used for face position and zone assignment. Stable across all mouth states.</li>
+      <li><strong>Landmarks 13, 14</strong> — upper/lower lip. Used to measure vertical mouth opening.</li>
+      <li><strong>Landmarks 61, 291</strong> — left/right mouth corner. Used to measure mouth width.</li>
+    </ul>
+    <pre><code><span class="cm">// Mouth-open detection: ratio of height to width > 0.28</span>
+<span class="kw">const</span> mH = Math.hypot((ul.x - ll.x) * cx, (ul.y - ll.y) * cy);
+<span class="kw">const</span> mW = Math.hypot((lc.x - rc.x) * cx, (lc.y - rc.y) * cy);
+m.open = mW > 0 && (mH / mW) > 0.28;</code></pre>
+
+    <h3>Web Audio API</h3>
+    <p>
+      All sound is synthesised at runtime using the Web Audio API — no audio files are loaded.
+      An <code>AudioContext</code> is created lazily on the first user gesture to comply with
+      browser autoplay policy.
+    </p>
+    <ul>
+      <li><strong>SFX</strong> — short <code>OscillatorNode</code> bursts with gain envelopes and optional frequency bends.</li>
+      <li><strong>Music</strong> — a 16-step minor-pentatonic chiptune loop scheduled ahead of the current time via <code>tickMusic()</code>, called every game frame.</li>
+      <li><strong>Fever mode</strong> — BPM doubles from 128 to 200 when fever is active.</li>
+    </ul>
+    <pre><code><span class="cm">// Lazy init on first tap/click</span>
+document.addEventListener(<span class="str">'click'</span>, initAudio, { once: <span class="kw">true</span> });
+document.addEventListener(<span class="str">'touchstart'</span>, initAudio, { once: <span class="kw">true</span> });
+
+<span class="kw">function</span> <span class="fn">initAudio</span>() {
+  <span class="kw">if</span> (audioCtx) <span class="kw">return</span>;
+  audioCtx = <span class="kw">new</span> AudioContext();
+  masterGain = audioCtx.<span class="fn">createGain</span>();
+  masterGain.gain.value = 0.8;
+  masterGain.<span class="fn">connect</span>(audioCtx.destination);
+}</code></pre>
+
+    <h3>Canvas 2D</h3>
+    <p>
+      Everything visible during gameplay is drawn on a single <code>&lt;canvas&gt;</code> element
+      that covers the full viewport. The live webcam feed is rendered in a mirrored
+      <code>&lt;video&gt;</code> behind the canvas.
+    </p>
+    <p>
+      Sprites are SVG pixel-art definitions converted to <code>Blob</code> URLs and pre-loaded
+      into an <code>Image</code> cache before the game starts. This means <code>drawImage()</code>
+      calls are GPU-accelerated with no per-frame SVG parsing.
+    </p>
+    <pre><code><span class="cm">// Pre-rasterise SVG sprites into Image cache</span>
+<span class="kw">function</span> <span class="fn">cacheSprites</span>() {
+  <span class="kw">return</span> Promise.<span class="fn">all</span>([...GOOD_KEYS, <span class="str">'poop'</span>].<span class="fn">map</span>(k => <span class="kw">new</span> Promise(res => {
+    <span class="kw">const</span> img = <span class="kw">new</span> Image();
+    <span class="kw">const</span> blob = <span class="kw">new</span> Blob([mkSvg(52, PA[k])], { type: <span class="str">'image/svg+xml'</span> });
+    img.onload = () => { spriteCache[k] = img; res(); };
+    img.src = URL.<span class="fn">createObjectURL</span>(blob);
+  })));
+}</code></pre>
+
+    <h3>No build step</h3>
+    <p>
+      Each game mode is a self-contained HTML file. MediaPipe is loaded from a CDN
+      (<code>cdn.jsdelivr.net</code>). Fonts come from Google Fonts. Zero npm packages,
+      zero bundlers. Deploy = copy file to S3.
+    </p>
+  </section>
+
+  <!-- File structure -->
+  <section>
+    <h2>File Structure</h2>
+    <pre><code>gobble/
+├── index.html        ← Solo mode
+├── duello.html       ← Alias for CloudFront routing (see note below)
+├── duello/
+│   └── index.html   ← Duello mode (canonical)
+└── docs.html         ← This file</code></pre>
+
+    <div class="callout">
+      <strong>Why does <code>duello.html</code> exist?</strong><br>
+      <code>gobble.tio.ist</code> is served from an S3 bucket via CloudFront.
+      When a visitor hits the extensionless path <code>/duello</code>, CloudFront
+      looks for an exact key match. Without <code>duello.html</code> at the bucket root,
+      the request would 404 (or fall through to the custom error page).
+      <code>duello.html</code> is a mirror of <code>duello/index.html</code> — it is
+      <strong>not</strong> trash. Both files serve the same game; the subdirectory version
+      handles <code>/duello/</code> (with trailing slash) while the root file handles
+      <code>/duello</code> (without).
+    </div>
+  </section>
+
+  <!-- Solo vs Duello -->
+  <section>
+    <h2>Solo vs Duello</h2>
+
+    <table class="compare">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th style="color:var(--pink)">Solo (<code>index.html</code>)</th>
+          <th style="color:#998800">Duello (<code>duello/index.html</code>)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">Players</td>
+          <td>1</td>
+          <td>2, side by side</td>
+        </tr>
+        <tr>
+          <td class="label">Game start</td>
+          <td>Name entry screen → tap Play</td>
+          <td>Auto: both zones occupied for 1.2 s → 5-second countdown</td>
+        </tr>
+        <tr>
+          <td class="label">Face detection</td>
+          <td><code>numFaces: 1</code>, uses <code>fr.faceLandmarks?.[0]</code></td>
+          <td><code>numFaces: 2</code>, assigns faces to zones by nose-tip X position</td>
+        </tr>
+        <tr>
+          <td class="label">Zones</td>
+          <td>Full screen</td>
+          <td>Left half → P1, Right half → P2. Dividing line drawn on canvas.</td>
+        </tr>
+        <tr>
+          <td class="label">Item spawning</td>
+          <td>Random X</td>
+          <td>Alternates left/right halves so both players get equal supply</td>
+        </tr>
+        <tr>
+          <td class="label">Scoring</td>
+          <td>Single score, local leaderboard, rank labels</td>
+          <td>P1 score + P2 score, winner declared at end</td>
+        </tr>
+        <tr>
+          <td class="label">Fever mode</td>
+          <td>7-streak → 2× score + magnetic pull + yellow flash</td>
+          <td>Same, but only P1 gets magnetic pull (P2 has separate zone)</td>
+        </tr>
+        <tr>
+          <td class="label">Post-game</td>
+          <td>Result screen → leaderboard → auto-restart</td>
+          <td>Result screen with scores → 30-second countdown → rematch</td>
+        </tr>
+        <tr>
+          <td class="label">Test mode</td>
+          <td>N/A (single player by design)</td>
+          <td><code>?test</code> URL param: 1 face unlocks both zones, mirrors mouth to P2</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Zone assignment (Duello-specific)</h3>
+    <p>
+      The webcam is mirrored horizontally (<code>transform: scaleX(-1)</code>). A person
+      standing on the physical right side of the camera appears on the <em>left</em> side of
+      the video. Zone assignment uses the nose tip (landmark 4) for its position stability:
+    </p>
+    <pre><code><span class="cm">// screenX = 1 − camera X (because video is mirrored)</span>
+<span class="kw">const</span> screenX = 1 - lm[4].x;
+
+<span class="cm">// screenX < 0.5  → face on left  → P1 (mouth)</span>
+<span class="cm">// screenX >= 0.5 → face on right → P2 (mouth2)</span>
+<span class="kw">const</span> m = (!TEST_MODE && screenX >= 0.5) ? mouth2 : mouth;
+</code></pre>
+    <p>
+      Lip landmarks (13/14) were deliberately <em>not</em> used for zone assignment.
+      When a mouth opens, lip X-coordinates shift, which previously caused P1 and P2
+      to swap on every frame — freezing item updates as each assignment overrode the other.
+      The nose tip is rigid and does not move with the jaw.
+    </p>
+
+    <h3>Wait state machine (Duello-specific)</h3>
+    <div class="state-flow">
+      <div class="state">'detecting'</div>
+      <span class="arrow">→</span>
+      <div class="state pink">both zones filled 1.2 s</div>
+      <span class="arrow">→</span>
+      <div class="state blue">'counting'</div>
+      <span class="arrow">→</span>
+      <div class="state">game starts</div>
+    </div>
+    <p>
+      Once <code>waitState</code> transitions to <code>'counting'</code>, it is permanently
+      locked until the game starts. Detection glitches (MediaPipe occasionally dropping
+      a face for one frame) cannot reset the countdown:
+    </p>
+    <pre><code><span class="kw">if</span> (waitState === <span class="str">'counting'</span>) {
+  <span class="cm">// LOCKED — ignore face-loss events</span>
+} <span class="kw">else</span> {
+  <span class="kw">const</span> bothSides = faceInLeft && faceInRight;
+  <span class="kw">if</span> (bothSides) {
+    stableMs += dt * 1000;
+    <span class="kw">if</span> (stableMs >= STABLE_NEEDED) {
+      waitState = <span class="str">'counting'</span>; autoCountdown = 5;
+    }
+  } <span class="kw">else</span> {
+    stableMs = Math.<span class="fn">max</span>(0, stableMs - dt * 600);
+  }
+}</code></pre>
+  </section>
+
+  <!-- Why it freezes -->
+  <section>
+    <h2>Why Items Get Stuck When a Player Opens Their Mouth</h2>
+    <p>
+      This was the primary bug during development. Items would visually freeze (stop falling)
+      whenever a player opened their mouth, then resume when they closed it. The game loop
+      was still running — only the item updates halted. Root cause was a cascade:
+    </p>
+    <ol>
+      <li>
+        <strong>Using lip landmarks for zone assignment.</strong>
+        When a player opened their mouth, lip X-coordinates shifted enough to flip which
+        zone their face was assigned to. This caused <code>mouth</code> and <code>mouth2</code>
+        to be overwritten in the wrong order, effectively clearing the active player's mouth
+        state every other frame.
+        <br><strong>Fix:</strong> use nose tip (landmark 4) for zone assignment instead.
+      </li>
+      <li>
+        <strong><code>sfx()</code> throwing when <code>masterGain</code> was null.</strong>
+        Before audio was initialised by a user gesture, <code>masterGain</code> was null.
+        <code>sfx()</code> tried to call <code>masterGain.gain.setValueAtTime()</code> and threw.
+        A blanket <code>try/catch</code> around the game update loop swallowed the error silently,
+        but the item had already been marked <code>collected = true</code> before
+        <code>collectItem()</code> was called, so the scoring, particles and floating text
+        never ran. Items disappeared from the spawn list but showed no visual feedback.
+        <br><strong>Fix:</strong> guard <code>sfx()</code> against null early, remove the blanket catch.
+      </li>
+    </ol>
+    <pre><code><span class="cm">// Guard prevents throw when AudioContext isn't ready yet</span>
+<span class="kw">function</span> <span class="fn">sfx</span>(freq, type, dur, vol = 0.28, bend = null) {
+  <span class="kw">if</span> (!audioCtx || !masterGain || audioCtx.state !== <span class="str">'running'</span>) <span class="kw">return</span>;
+  <span class="cm">// rate-limit: no more than one SFX every 40 ms</span>
+  <span class="kw">const</span> now100 = Date.<span class="fn">now</span>();
+  <span class="kw">if</span> (now100 - _lastSfxTime < 40) <span class="kw">return</span>;
+  _lastSfxTime = now100;
+  <span class="cm">// ... create oscillator</span>
+}</code></pre>
+  </section>
+
+  <!-- Performance -->
+  <section>
+    <h2>Performance Notes</h2>
+    <ul>
+      <li><strong>Sprite cache</strong> — SVG→Blob→Image pre-loaded once before start. <code>drawImage()</code> calls are GPU-accelerated, no per-frame SVG parse.</li>
+      <li><strong>Detection throttle</strong> — face detection runs every 80 ms during the wait phase, 28 ms during gameplay. This prevents detection from blocking the render frame.</li>
+      <li><strong>No DOM updates during gameplay</strong> — scores, particles, and floating text are all drawn on the canvas. Zero DOM mutations = zero layout recalculations per frame.</li>
+      <li><strong>Particle/text pools</strong> — arrays are filtered in-place each frame (<code>p.life > 0</code>), avoiding allocations in the hot path.</li>
+      <li><strong>Audio rate limit</strong> — <code>sfx()</code> enforces a 40 ms cooldown to prevent Web Audio graph overflow when many items are collected simultaneously.</li>
+    </ul>
+  </section>
+
+  <!-- Test mode -->
+  <section>
+    <h2>Test Mode</h2>
+    <p>
+      Duello requires two people, which makes local development awkward. Add <code>?test</code>
+      to the URL to enable single-player testing:
+    </p>
+    <pre><code>https://gobble.tio.ist/duello/?test</code></pre>
+    <p>In test mode:</p>
+    <ul>
+      <li>A single detected face unlocks both zones in the wait state (countdown starts immediately).</li>
+      <li>The single mouth is mirrored to <code>mouth2</code> each frame, so both P1 and P2 zones are active.</li>
+      <li>Both halves of the screen are playable by one person.</li>
+    </ul>
+    <pre><code><span class="kw">const</span> TEST_MODE = <span class="kw">new</span> URLSearchParams(location.search).<span class="fn">has</span>(<span class="str">'test'</span>);
+
+<span class="cm">// In wait state: 1 face counts as both zones</span>
+<span class="kw">const</span> bothSides = TEST_MODE
+  ? (faceInLeft || faceInRight)
+  : (faceInLeft && faceInRight);
+
+<span class="cm">// In game loop: mirror single face to P2</span>
+<span class="kw">if</span> (TEST_MODE && mouth.active && !mouth2.active) {
+  mouth2.x = mouth.x; mouth2.y = mouth.y;
+  mouth2.open = mouth.open; mouth2.active = <span class="kw">true</span>;
+}</code></pre>
+  </section>
+
+  <!-- Game loop -->
+  <section>
+    <h2>Main Game Loop</h2>
+    <pre><code><span class="kw">function</span> <span class="fn">mainLoop</span>(ts) {
+  requestAnimationFrame(mainLoop);
+
+  <span class="cm">// 1. Run face detection (throttled)</span>
+  <span class="fn">runDetection</span>(ts);
+
+  <span class="kw">if</span> (!gameActive) {
+    <span class="cm">// 2a. Wait phase: render detection UI + handle auto-countdown</span>
+    <span class="fn">handleWait</span>(ts);
+    <span class="fn">renderWait</span>();
+  } <span class="kw">else</span> {
+    <span class="cm">// 2b. Game phase: music → physics → render</span>
+    <span class="kw">const</span> dt = Math.<span class="fn">min</span>((ts - lastTime) / 1000, 0.05);
+    lastTime = ts;
+    <span class="fn">tickMusic</span>();
+    <span class="fn">updateGame</span>(dt);  <span class="cm">// items, scoring, fever</span>
+    <span class="fn">renderGame</span>();   <span class="cm">// canvas draw</span>
+  }
+}</code></pre>
+    <p>
+      The frame delta is clamped to 50 ms (20 fps minimum) so a tab backgrounded briefly
+      does not cause items to teleport on resume.
+    </p>
+  </section>
+
+  <footer>
+    <p>
+      Built by <a href="https://tio.ist">tio.ist</a> —
+      <a href="https://github.com/tio-ist/gobble">github.com/tio-ist/gobble</a>
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>
