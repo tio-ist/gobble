@@ -9,7 +9,7 @@
 html,body { width:100%; height:100%; overflow:hidden; background:#000;
   font-family:'Space Grotesk','Helvetica Neue',Arial,sans-serif; }
 #video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
-.dim   { position:absolute; inset:0; background:rgba(0,0,0,0.42); pointer-events:none; }
+.dim   { position:absolute; inset:0; background:rgba(0,0,0,0.28); pointer-events:none; }
 #canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 
 #hud-timer {
@@ -27,7 +27,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 }
 
 /* Name screen */
-#s-name { background:rgba(8,8,8,0.96); color:#fff; gap:18px; }
+#s-name { background:rgba(8,8,8,0.82); color:#fff; gap:18px; backdrop-filter:blur(4px); }
 #s-name h1 { font-size:60px; font-weight:900; letter-spacing:-0.04em; }
 #s-name .tagline { color:#555; font-size:14px; letter-spacing:0.04em; }
 #player-name {
@@ -130,10 +130,10 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   <input id="player-name" type="text" placeholder="YOUR NAME" maxlength="12"
     autocomplete="off" autocorrect="off" spellcheck="false"
     oninput="this.value=this.value.toUpperCase()">
-  <div class="status-msg" id="status-msg"></div>
   <button class="btn-play" onclick="onPlay()">PLAY →</button>
   <button class="btn-ghost" onclick="showLeaderboard()">🏆 LEADERBOARD</button>
   <p class="how-to">7 catches in a row → 🔥 GOBBLE FEVER<br>2× score + items fly to your mouth<br>Miss one or eat 💩 = streak gone</p>
+  <div class="status-msg" id="status-msg"></div>
 </div>
 
 <!-- Countdown -->
@@ -257,8 +257,8 @@ function spawnText(x,y,text,color='#fff',size=22) {
 // ── Constants ─────────────────────────────────────────────────────────────────
 const GAME_TIME       = 45;
 const FEVER_DURATION  = 4.5;
-const FEVER_RADIUS    = 200;
-const FEVER_PULL      = 150;
+const FEVER_RADIUS    = 280;
+const FEVER_PULL      = 420;
 const STREAK_FEVER    = 7;
 const STREAK_MULT_AT  = 5;
 
@@ -298,13 +298,12 @@ function updateGame(dt) {
     timeLeft=0; gameActive=false;
     document.getElementById('hud-timer').style.display='none';
     document.getElementById('fever-overlay').className='';
-    setTimeout(endGame,700); return;
+    setTimeout(()=>(window._endGameAsync||endGame)(),700); return;
   }
   document.getElementById('hud-timer').textContent=Math.ceil(timeLeft)+'s';
 
   const elapsed=GAME_TIME-timeLeft;
   const diff=getDiff(elapsed,streak);
-  const multiplier=feverTimer>0 ? 2 : (streak>=STREAK_MULT_AT ? 1.5 : 1);
 
   if (feverTimer>0) {
     feverTimer=Math.max(0,feverTimer-dt);
@@ -350,40 +349,41 @@ function updateGame(dt) {
 
   // Collect
   items.forEach(item=>{
-    if (item.collected||!mouth.active||!mouth.open) return;
-    if (Math.hypot(mouth.x-item.x,mouth.y-item.y)<COLLECT_R+ITEM_SIZE/2) {
+    if (item.collected) return;
+    if (mouth.active && mouth.open && Math.hypot(mouth.x-item.x,mouth.y-item.y)<COLLECT_R+ITEM_SIZE/2) {
       item.collected=true; item.collectAnim=0;
-      if (item.dead) {
-        score=Math.max(0,score-4);
-        streak=0;
-        poopFlash=0.65;
-        triggerShake();
-        spawnPetals(item.x,item.y,'poop');
-        spawnText(item.x,item.y-28,'-4 💩','#8B4A1E',24);
-        spawnText(item.x,item.y+18,'STREAK LOST','#FF4444',16);
-      } else {
-        const earned=Math.round(BASE_PTS[item.key]*multiplier);
-        score+=earned; streak++;
-        if (streak>maxStreak) maxStreak=streak;
-        eatFlash=0.22;
-        spawnPetals(item.x,item.y,item.key);
-        const bonus=earned>BASE_PTS[item.key];
-        spawnText(item.x,item.y-28,`+${earned}`,bonus?'#FEE52A':'#fff',bonus?26:22);
-
-        // Streak milestones
-        const W=canvas.width, midY=canvas.height*0.42;
-        if (streak===3) spawnText(W/2,midY,'🔥 3 IN A ROW!','#FFA500',20);
-        if (streak===5) spawnText(W/2,midY,'⚡ 5x — 1.5× SCORE!','#FF6600',22);
-        if (streak===6) spawnText(W/2,midY,'💥 ONE MORE!!','#FF0000',28);
-        if (streak>=STREAK_FEVER) {
-          streak=0; feverTimer=FEVER_DURATION; feverCount++;
-          document.getElementById('fever-overlay').className='active';
-          spawnText(W/2,midY-20,'🔥 GOBBLE FEVER 🔥','#FEE52A',32);
-          spawnText(W/2,midY+24,'2× + MAGNET','#FEE52A',18);
-        }
-      }
+      collectItem(item);
     }
   });
+
+  function collectItem(item) {
+    const multiplier = feverTimer>0 ? 2 : (streak>=STREAK_MULT_AT ? 1.5 : 1);
+    if (item.dead) {
+      score=Math.max(0,score-4); streak=0; poopFlash=0.65;
+      triggerShake();
+      spawnPetals(item.x,item.y,'poop');
+      spawnText(item.x,item.y-28,'-4 💩','#8B4A1E',24);
+      spawnText(item.x,item.y+18,'STREAK LOST','#FF4444',16);
+    } else {
+      const earned=Math.round(BASE_PTS[item.key]*multiplier);
+      score+=earned; streak++;
+      if (streak>maxStreak) maxStreak=streak;
+      eatFlash=0.22;
+      spawnPetals(item.x,item.y,item.key);
+      const bonus=earned>BASE_PTS[item.key];
+      spawnText(item.x,item.y-28,`+${earned}`,bonus?'#FEE52A':'#fff',bonus?26:22);
+      const W=canvas.width, midY=canvas.height*0.42;
+      if (streak===3) spawnText(W/2,midY,'🔥 3 IN A ROW!','#FFA500',20);
+      if (streak===5) spawnText(W/2,midY,'⚡ 5x — 1.5× SCORE!','#FF6600',22);
+      if (streak===6) spawnText(W/2,midY,'💥 ONE MORE!!','#FF0000',28);
+      if (streak>=STREAK_FEVER) {
+        streak=0; feverTimer=FEVER_DURATION; feverCount++;
+        document.getElementById('fever-overlay').className='active';
+        spawnText(W/2,midY-20,'🔥 GOBBLE FEVER 🔥','#FEE52A',32);
+        spawnText(W/2,midY+24,'2× + MAGNET','#FEE52A',18);
+      }
+    }
+  }
 
   particles=particles.filter(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=115*dt;p.rot+=p.rotV*dt;p.life-=dt;return p.life>0;});
   floatingTexts=floatingTexts.filter(ft=>{ft.y+=ft.vy*dt;ft.life-=dt;return ft.life>0;});
@@ -393,7 +393,6 @@ function spawnItem(diff) {
   const W=canvas.width, margin=55;
   const isDead=Math.random()<diff.deadChance;
   let key = isDead ? 'poop' : GOOD_KEYS[Math.floor(Math.random()*GOOD_KEYS.length)];
-  // Temptation: at high streak, rainbow appears more (tempts near poop timing)
   if (!isDead && streak>=7 && streak<STREAK_FEVER && Math.random()<0.35) key='rainbow';
   items.push({key,x:margin+Math.random()*(W-margin*2),y:-ITEM_SIZE,dead:isDead,age:0,collected:false,collectAnim:0});
 }
@@ -401,8 +400,6 @@ function spawnItem(diff) {
 // ── End game ──────────────────────────────────────────────────────────────────
 function endGame() {
   const {rank,ts} = saveScore(playerName,score);
-
-  // Personal best detection
   const allScores = getScores();
   const myScores = allScores.filter(s=>s.name===(playerName||'ANON').toUpperCase().trim().slice(0,12)||'ANON');
   const isNewBest = myScores.length===1 || score>=Math.max(...myScores.map(s=>s.score));
@@ -420,8 +417,6 @@ function endGame() {
   document.getElementById('r-new-best').style.display=isNewBest?'block':'none';
   document.getElementById('r-stats').innerHTML=
     `<span>MAX STREAK ${maxStreak}</span><span>FEVER ${feverCount}×</span>`;
-
-  // Preview top 5
   renderLB('lb-preview', ts);
 }
 
@@ -480,12 +475,10 @@ function drawAvatar() {
     ctx.beginPath();ctx.arc(hx,hy+3,8,0.1*Math.PI,0.9*Math.PI);ctx.stroke();
   }
 
-  // Score
   ctx.font='900 26px "Space Grotesk",monospace'; ctx.fillStyle='#fff';
   ctx.textBaseline='middle'; ctx.textAlign='left';
   ctx.fillText(score, px+13+hr*2+10, py+ph/2-5);
 
-  // Mult label
   if (fever||highStreak) {
     ctx.font='700 10px "Space Grotesk",monospace';
     ctx.fillStyle=fever?'#FEE52A':'#FF6600';
@@ -500,7 +493,6 @@ function drawStreakBar() {
   const sx=(W-totalW)/2, y=H-28;
 
   if (feverTimer>0) {
-    // Fever countdown bar
     const barW=200, bx=(W-barW)/2, by=H-22;
     ctx.fillStyle='rgba(254,229,42,0.15)'; ctx.fillRect(bx,by,barW,8);
     ctx.fillStyle='#FEE52A'; ctx.fillRect(bx,by,(feverTimer/FEVER_DURATION)*barW,8);
@@ -518,7 +510,7 @@ function drawStreakBar() {
       ctx.fillStyle=c;
       const pulse=i===streak-1?1+0.18*Math.sin(Date.now()/70):1;
       ctx.beginPath(); ctx.arc(cx,y,dotR*pulse,0,Math.PI*2); ctx.fill();
-      if (i>=7) { // urgency glow
+      if (i>=7) {
         ctx.strokeStyle=c+'88'; ctx.lineWidth=3;
         ctx.beginPath(); ctx.arc(cx,y,dotR*pulse+3,0,Math.PI*2); ctx.stroke();
       }
@@ -540,18 +532,15 @@ function render() {
   ctx.clearRect(0,0,W,H);
   if (!gameActive) return;
 
-  // Progress bar
   const prog=timeLeft/GAME_TIME;
   ctx.fillStyle='rgba(254,229,42,0.12)'; ctx.fillRect(0,H-4,W*prog,4);
   ctx.fillStyle=prog<0.25?'#F83098':'#FEE52A'; ctx.fillRect(0,H-4,W*prog,2);
 
-  // Fever canvas glow
   if (feverTimer>0) {
     ctx.fillStyle=`rgba(254,229,42,${0.04+0.03*Math.sin(Date.now()/110)})`;
     ctx.fillRect(0,0,W,H);
   }
 
-  // Items
   items.forEach(item=>{
     if (!spriteCache[item.key]) return;
     let alpha=1,scale=1;
@@ -560,8 +549,6 @@ function render() {
     ctx.save();
     ctx.globalAlpha=Math.max(0,alpha);
     ctx.translate(item.x,item.y); ctx.scale(scale,scale);
-
-    // Fever pull ring
     if (feverTimer>0&&!item.dead&&!item.collected&&mouth.active) {
       const d=Math.hypot(mouth.x-item.x,mouth.y-item.y);
       if (d<FEVER_RADIUS) {
@@ -569,9 +556,7 @@ function render() {
         ctx.beginPath(); ctx.arc(0,0,ITEM_SIZE/2+6,0,Math.PI*2); ctx.stroke();
       }
     }
-
     ctx.drawImage(spriteCache[item.key],-ITEM_SIZE/2,-ITEM_SIZE/2,ITEM_SIZE,ITEM_SIZE);
-
     if (!item.dead&&!item.collected&&BASE_PTS[item.key]>2) {
       ctx.globalAlpha=Math.max(0,alpha*0.9);
       ctx.font='700 12px "Space Grotesk",Arial';
@@ -581,26 +566,22 @@ function render() {
     ctx.restore();
   });
 
-  // Particles
   particles.forEach(p=>{
     ctx.save(); ctx.globalAlpha=p.life/p.maxLife; ctx.fillStyle=p.color;
     ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillRect(-4,-5.5,8,11); ctx.restore();
   });
 
-  // Floating texts
   floatingTexts.forEach(ft=>{
     const a=ft.life/ft.maxLife;
     ctx.save(); ctx.globalAlpha=a*a;
     ctx.font=`900 ${ft.size}px "Space Grotesk",Arial`;
     ctx.fillStyle=ft.color; ctx.textAlign='center'; ctx.textBaseline='middle';
-    // Outline for readability
     ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=3;
     ctx.strokeText(ft.text,ft.x,ft.y);
     ctx.fillText(ft.text,ft.x,ft.y);
     ctx.restore();
   });
 
-  // Mouth cursor
   if (mouth.active) {
     const fever=feverTimer>0, c=fever?'#FEE52A':'#F83098';
     if (fever) {
@@ -615,7 +596,6 @@ function render() {
     ctx.globalAlpha=1;
   }
 
-  // HUD panels
   drawAvatar();
   drawStreakBar();
 }
@@ -625,46 +605,101 @@ function render() {
 import { FaceLandmarker, FilesetResolver }
   from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 
-let fl, mlReady=false;
+// ── Visitor persistence ───────────────────────────────────────────────────────
+const VID_KEY  = 'gobble_vid';
+const NAME_KEY = 'gobble_name';
+const LAST_KEY = 'gobble_last';
+let visitorId  = localStorage.getItem(VID_KEY);
+if (!visitorId) {
+  visitorId = crypto.randomUUID();
+  localStorage.setItem(VID_KEY, visitorId);
+}
+const savedName = localStorage.getItem(NAME_KEY) || '';
+const lastResult = JSON.parse(localStorage.getItem(LAST_KEY) || 'null');
 
-async function initML(st) {
-  st.textContent='Loading AI model…';
-  const vis=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  fl=await FaceLandmarker.createFromOptions(vis,{
-    baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'GPU'},
-    runningMode:'VIDEO', numFaces:1,
-    minFaceDetectionConfidence:0.5, minTrackingConfidence:0.5
-  });
-  mlReady=true;
-  st.textContent='';
+const st = document.getElementById('status-msg');
+
+if (savedName) {
+  const ni = document.getElementById('player-name');
+  if (ni) ni.value = savedName;
+}
+if (lastResult && st) {
+  st.textContent = `Welcome back! Last score: ${lastResult.score}`;
 }
 
+// ── API (server leaderboard) with localStorage fallback ───────────────────────
+const API = 'https://api.gobble.tio.ist';
+async function apiFetch(path, opts) {
+  try {
+    const r = await fetch(API + path, { ...opts, signal: AbortSignal.timeout(3000) });
+    if (!r.ok) throw new Error('bad status');
+    return r.json();
+  } catch { return null; }
+}
+async function apiGetScores() {
+  const data = await apiFetch('/scores');
+  return data || getScores();
+}
+async function apiSaveScore(name, sc) {
+  const local = saveScore(name, sc);
+  const data  = await apiFetch('/scores', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ visitorId, name, score: sc }),
+  });
+  return data ? { rank: data.rank, scores: data.top10 } : { rank: local.rank, scores: getScores() };
+}
+
+// ── ML + camera init ──────────────────────────────────────────────────────────
+let fl, mlReady = false;
+
+async function earlyInit() {
+  if (st) st.textContent = 'Opening camera…';
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+  }).catch(() => null);
+  if (!stream) { if (st) st.textContent = '⚠️ Camera needed — tap to allow'; return; }
+  video.srcObject = stream;
+  await new Promise(r => { video.onloadeddata = r; });
+  if (st) st.textContent = 'Loading AI…';
+  await cacheSprites();
+  const vis = await FilesetResolver.forVisionTasks(
+    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+  );
+  fl = await FaceLandmarker.createFromOptions(vis, {
+    baseOptions: {
+      modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+      delegate: 'GPU'
+    },
+    runningMode: 'VIDEO', numFaces: 1,
+    minFaceDetectionConfidence: 0.5, minTrackingConfidence: 0.5
+  });
+  if (video.videoWidth) { try { fl.detectForVideo(video, performance.now()); } catch {} }
+  mlReady = true;
+  if (st && st.textContent === 'Loading AI…') st.textContent = '';
+}
+
+earlyInit().catch(() => { if (st) st.textContent = '⚠️ Camera needed — reload'; });
+
+// ── Play handler ──────────────────────────────────────────────────────────────
 window.onPlay = async () => {
-  const nameInput=document.getElementById('player-name');
-  playerName=nameInput.value.trim()||'ANON';
-  const st=document.getElementById('status-msg');
+  const nameInput = document.getElementById('player-name');
+  playerName = (nameInput.value.trim() || 'ANON').toUpperCase();
+  localStorage.setItem(NAME_KEY, playerName);
 
   if (!mlReady) {
-    st.textContent='Opening camera…';
-    const stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720}}
-    }).catch(()=>null);
-    if (!stream) { st.textContent='⚠️ Camera permission required — reload'; return; }
-    video.srcObject=stream;
-    await new Promise(r=>video.onloadeddata=r);
-    await cacheSprites();
-    await initML(st);
+    if (st) st.textContent = 'Still loading… wait a sec';
+    return;
   }
 
-  // Countdown
   showScreen('s-countdown');
-  document.getElementById('cd-name').textContent=playerName.toUpperCase();
-  const cdEl=document.getElementById('cd-num');
-  for(let i=3;i>=1;i--){
-    cdEl.textContent=i; cdEl.className='cd-num'; void cdEl.offsetWidth; cdEl.classList.add('anim');
+  document.getElementById('cd-name').textContent = playerName;
+  const cdEl = document.getElementById('cd-num');
+  for (let i = 3; i >= 1; i--) {
+    cdEl.textContent = i; cdEl.className = 'cd-num'; void cdEl.offsetWidth; cdEl.classList.add('anim');
     await sleep(880);
   }
-  cdEl.textContent='GO!'; cdEl.className='cd-num'; void cdEl.offsetWidth; cdEl.classList.add('anim');
+  cdEl.textContent = 'GO!'; cdEl.className = 'cd-num'; void cdEl.offsetWidth; cdEl.classList.add('anim');
   await sleep(480);
 
   showScreen(null);
@@ -672,32 +707,89 @@ window.onPlay = async () => {
   requestAnimationFrame(loop);
 };
 
+// ── Game loop ─────────────────────────────────────────────────────────────────
+let lastDetectTs = 0;
 function loop(ts) {
   if (!gameActive) return;
   if (!video.videoWidth) { requestAnimationFrame(loop); return; }
-  try {
-    const fr=fl.detectForVideo(video,performance.now());
-    const lm=fr.faceLandmarks?.[0];
-    if (lm) {
-      const ul=lm[13],ll=lm[14],lc=lm[61],rc=lm[291];
-      const cx=canvas.width, cy=canvas.height;
-      mouth.x=(1-(ul.x+ll.x)/2)*cx;
-      mouth.y=((ul.y+ll.y)/2)*cy;
-      const mH=Math.hypot((ul.x-ll.x)*cx,(ul.y-ll.y)*cy);
-      const mW=Math.hypot((lc.x-rc.x)*cx,(lc.y-rc.y)*cy);
-      mouth.open=mW>0&&(mH/mW)>0.28;
-      mouth.active=true;
-    } else { mouth.active=false; }
-  } catch{ mouth.active=false; }
 
-  if (!lastTime) lastTime=ts;
-  updateGame(Math.min((ts-lastTime)/1000,0.05));
-  lastTime=ts;
+  if (ts - lastDetectTs >= 28) {
+    lastDetectTs = ts;
+    try {
+      const fr = fl.detectForVideo(video, performance.now());
+      const cx = canvas.width, cy = canvas.height;
+      const lm = fr.faceLandmarks?.[0];
+      if (lm) {
+        const ul = lm[13], ll = lm[14], lc = lm[61], rc = lm[291];
+        mouth.x = (1 - (ul.x + ll.x) / 2) * cx;
+        mouth.y = ((ul.y + ll.y) / 2) * cy;
+        const mH = Math.hypot((ul.x - ll.x) * cx, (ul.y - ll.y) * cy);
+        const mW = Math.hypot((lc.x - rc.x) * cx, (lc.y - rc.y) * cy);
+        mouth.open = mW > 0 && (mH / mW) > 0.28;
+        mouth.active = true;
+      } else { mouth.active = false; }
+    } catch { mouth.active = false; }
+  }
+
+  if (!lastTime) lastTime = ts;
+  updateGame(Math.min((ts - lastTime) / 1000, 0.05));
+  lastTime = ts;
   render();
   requestAnimationFrame(loop);
 }
 
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+// ── Async end game (API save + leaderboard) ───────────────────────────────────
+window._endGameAsync = async function() {
+  const result = await apiSaveScore(playerName, score);
+  const { rank, scores } = result;
+
+  localStorage.setItem(LAST_KEY, JSON.stringify({ score, name: playerName, ts: Date.now() }));
+
+  const allScores = scores || getScores();
+  const myBest = allScores.filter(s => s.name === (playerName||'ANON').toUpperCase().trim().slice(0,12));
+  const isNewBest = myBest.length <= 1 || score >= Math.max(...myBest.map(s => s.score));
+
+  const res = document.getElementById('s-result');
+  res.className = 'screen ' + (score >= 15 ? 'win-bg' : 'dark-bg');
+  res.style.display = 'flex';
+
+  const scoreEl = document.getElementById('r-score');
+  scoreEl.textContent = score;
+  scoreEl.className = 'r-score'; void scoreEl.offsetWidth; scoreEl.classList.add('anim');
+
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('r-rank').textContent = (rank <= 3 ? medals[rank-1] + ' ' : '') + `RANK #${rank} OF ${allScores.length}`;
+  document.getElementById('r-new-best').style.display = isNewBest ? 'block' : 'none';
+  document.getElementById('r-stats').innerHTML =
+    `<span>MAX STREAK ${maxStreak}</span><span>FEVER ${feverCount}×</span>`;
+
+  const el = document.getElementById('lb-preview');
+  if (!allScores.length) { el.innerHTML = '<p class="lb-empty">No scores yet!</p>'; }
+  else {
+    const ts = Date.now();
+    el.innerHTML = allScores.slice(0,5).map((s,i) => `
+      <div class="lb-row ${s.name === (playerName||'ANON').toUpperCase().trim().slice(0,12) && Math.abs(s.ts - ts) < 3000 ? 'me' : ''}">
+        <span class="lb-rank">${['🥇','🥈','🥉'][i]||'#'+(i+1)}</span>
+        <span class="lb-name">${s.name}</span>
+        <span class="lb-pts">${s.score}</span>
+      </div>`).join('');
+  }
+};
+
+window.showLeaderboard = async () => {
+  showScreen('s-lb');
+  const scores = await apiGetScores();
+  const el = document.getElementById('lb-full');
+  if (!scores.length) { el.innerHTML = '<p class="lb-empty">No scores yet — be the first!</p>'; return; }
+  el.innerHTML = scores.map((s,i) => `
+    <div class="lb-row ${s.name===(playerName||'ANON').toUpperCase().trim().slice(0,12)?'me':''}">
+      <span class="lb-rank">${['🥇','🥈','🥉'][i]||'#'+(i+1)}</span>
+      <span class="lb-name">${s.name}</span>
+      <span class="lb-pts">${s.score}</span>
+    </div>`).join('');
+};
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 </body>
 </html>

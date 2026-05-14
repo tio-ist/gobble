@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>GOBBLE DUELLO</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; background:#000;
+  font-family:'Space Grotesk','Helvetica Neue',Arial,sans-serif; }
+#video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+#canvas { position:absolute; inset:0; width:100%; height:100%; }
+
+#hud-timer {
+  position:fixed; z-index:30; top:14px; left:50%; transform:translateX(-50%);
+  background:rgba(10,10,10,0.82); backdrop-filter:blur(8px);
+  color:#FEE52A; font-size:20px; font-weight:900; letter-spacing:0.08em;
+  padding:8px 22px; border-radius:99px; border:2px solid rgba(254,229,42,0.7);
+  display:none; pointer-events:none;
+}
+
+.screen {
+  position:fixed; inset:0; z-index:80;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:36px 28px; text-align:center;
+}
+
+/* Countdown */
+#s-countdown { background:rgba(0,0,0,0.6); z-index:90; gap:10px; display:none; }
+.cd-greeting { font-size:18px; font-weight:700; color:#F83098; letter-spacing:0.1em; text-transform:uppercase; }
+.cd-num { font-size:180px; font-weight:900; color:#fff; line-height:1; }
+
+/* Result */
+#s-result { display:none; z-index:90; gap:18px; background:linear-gradient(150deg,#0a0a0a,#1a1a1a); color:#fff; }
+.r-winner { font-size:32px; font-weight:900; letter-spacing:-0.02em; }
+.r-scorebox { display:flex; gap:0; border:2px solid #2a2a2a; width:100%; max-width:380px; }
+.r-p-box { flex:1; padding:20px; text-align:center; }
+.r-p-box:first-child { border-right:1px solid #2a2a2a; }
+.r-p-label { font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; opacity:0.5; margin-bottom:6px; }
+.r-p-score { font-size:64px; font-weight:900; line-height:1; }
+.btn-play {
+  background:#F83098; color:#0A0A0A; border:none;
+  padding:18px 52px; font-size:20px; font-weight:900; letter-spacing:0.06em;
+  text-transform:uppercase; cursor:pointer; box-shadow:5px 5px 0 rgba(248,48,152,0.28);
+}
+.btn-play:active { transform:translate(2px,2px); }
+
+@keyframes pop-in {
+  0%  { transform:scale(0.15) rotate(-10deg); opacity:0; }
+  60% { transform:scale(1.12) rotate(2deg); }
+  100%{ transform:scale(1) rotate(0); opacity:1; }
+}
+.anim { animation:pop-in 0.45s cubic-bezier(.36,.07,.19,.97) both; }
+
+@keyframes screen-shake {
+  0%,100%{ transform:translate(0,0) rotate(0deg); }
+  10%{ transform:translate(-9px,5px) rotate(-0.5deg); }
+  20%{ transform:translate(9px,-5px) rotate(0.5deg); }
+  30%{ transform:translate(-7px,7px) rotate(-0.3deg); }
+  40%{ transform:translate(7px,-3px) rotate(0.3deg); }
+  50%{ transform:translate(-5px,5px) rotate(-0.2deg); }
+  60%{ transform:translate(5px,-7px) rotate(0.2deg); }
+  70%{ transform:translate(-3px,3px); }
+  80%{ transform:translate(3px,-5px); }
+  90%{ transform:translate(-2px,2px); }
+}
+.shake { animation:screen-shake 0.45s ease-out; }
+
+#fever-overlay {
+  position:fixed; inset:0; z-index:25; pointer-events:none;
+  background:#FEE52A; opacity:0; display:none;
+}
+@keyframes fever-pulse { 0%,100%{opacity:0} 50%{opacity:0.14} }
+#fever-overlay.active { display:block; animation:fever-pulse 0.4s infinite; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+<div id="fever-overlay"></div>
+<div id="hud-timer">45</div>
+
+<!-- Countdown -->
+<div id="s-countdown" class="screen">
+  <div class="cd-greeting" id="cd-name">GET READY</div>
+  <div class="cd-num anim" id="cd-num">3</div>
+</div>
+
+<!-- Result -->
+<div id="s-result" class="screen">
+  <div class="r-winner" id="r-winner"></div>
+  <div class="r-scorebox">
+    <div class="r-p-box" id="r-p1-box">
+      <div class="r-p-label" id="r-p1-label">P1</div>
+      <div class="r-p-score" id="r-p1-score">0</div>
+    </div>
+    <div class="r-p-box" id="r-p2-box">
+      <div class="r-p-label" id="r-p2-label">P2</div>
+      <div class="r-p-score" id="r-p2-score">0</div>
+    </div>
+  </div>
+  <button class="btn-play" onclick="restartWait()">REMATCH → <span id="r-countdown"></span></button>
+  <a href="/gobble/" style="font-size:13px;color:#444;margin-top:8px;text-decoration:none;">← solo mode</a>
+</div>
+
+<script>
+/*
+ * GOBBLE DUELLO — Technical Overview
+ * ====================================
+ * Two-player webcam arcade: players eat falling items by opening their mouths.
+ *
+ * CORE LOOP
+ * ---------
+ * requestAnimationFrame → mainLoop(ts)
+ *
+ *   Wait phase (gameActive=false):
+ *     • MediaPipe FaceLandmarker detects up to 2 faces every 80 ms (GPU delegate).
+ *     • Each face's screen X = 1 − camera X (mirrored display). Faces are sorted
+ *       so the leftmost screen position → P1, rightmost → P2.
+ *     • faceInLeft / faceInRight track whether each half has a face.
+ *     • When both zones are occupied continuously for STABLE_NEEDED ms (1.2 s),
+ *       waitState switches to 'counting' and a 5-second canvas countdown begins.
+ *     • Once counting starts it is LOCKED — face-loss events are ignored until
+ *       the game begins. (Early versions reset on any detection glitch → stuck.)
+ *
+ *   Game phase (gameActive=true):
+ *     • Face detection runs every 28 ms for smoother mouth tracking.
+ *     • Items fall from the top; _spawnSide alternates L/R so both halves are fed equally.
+ *     • P1 can only collect items where item.x < W/2; P2 where item.x >= W/2.
+ *     • getDiff() ramps fall speed, spawn rate and poop chance over 38 seconds.
+ *     • Fever mode (7-streak): 4.5 s of 2× score + magnetic pull toward P1's mouth.
+ *
+ * WHY IT GETS STUCK
+ * -----------------
+ *   1. Detection glitch: MediaPipe occasionally returns 0 faces for one frame
+ *      (GPU scheduling hiccup). Previously this reset stableMs and the countdown.
+ *      Fix: after waitState='counting', the stability block is skipped entirely.
+ *   2. Both faces on same side: if two people stand near the center, bothSides
+ *      stays false and stableMs decays. Players must be clearly left/right.
+ *   3. AudioContext suspended: browser blocks audio until a user gesture fires.
+ *      We create AudioContext lazily on first tap/click via initAudio().
+ *
+ * PERFORMANCE
+ * -----------
+ *   • Sprites pre-rasterised into Image cache via SVG→Blob→createObjectURL.
+ *     drawImage() is then GPU-accelerated with no per-frame SVG parsing.
+ *   • Face detection throttled per phase (80 ms / 28 ms) to avoid blocking rAF.
+ *   • Canvas is the sole render target — zero DOM updates during gameplay.
+ *   • Particles and floatingTexts are filtered in-place each frame (no allocations).
+ *
+ * AUDIO
+ * -----
+ *   AudioContext created lazily on first interaction (autoplay policy).
+ *   All music and SFX are synthesised via Web Audio API oscillators — no files.
+ *   tickMusic() is called every game frame and schedules 8th-note steps ahead
+ *   of the current time, creating a gapless chiptune loop. Fever mode doubles BPM.
+ */
+
+// ── Test mode (single player) — activate with ?test in URL ───────────────────
+const TEST_MODE = new URLSearchParams(location.search).has('test');
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+const video  = document.getElementById('video');
+function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+// ── Sprites ───────────────────────────────────────────────────────────────────
+const R=(x,y,w,h,c)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
+const mkSvg=(s,b)=>`<svg viewBox="0 0 16 16" width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">${b}</svg>`;
+const PA = {
+  blossom: R(7,1,2,4,'#FF85AB')+R(7,11,2,4,'#FF85AB')+R(1,7,4,2,'#FF85AB')+R(11,7,4,2,'#FF85AB')+R(2,2,3,3,'#FFB7D5')+R(11,2,3,3,'#FFB7D5')+R(2,11,3,3,'#FFB7D5')+R(11,11,3,3,'#FFB7D5')+R(5,5,6,6,'#FF85AB')+R(6,6,4,4,'#FEE52A')+R(7,5,2,1,'#FEE52A')+R(7,10,2,1,'#FEE52A')+R(5,7,1,2,'#FEE52A')+R(10,7,1,2,'#FEE52A'),
+  daisy: R(7,1,2,4,'#FFFBD0')+R(7,11,2,4,'#FFFBD0')+R(1,7,4,2,'#FFFBD0')+R(11,7,4,2,'#FFFBD0')+R(2,2,3,3,'#FFFBD0')+R(11,2,3,3,'#FFFBD0')+R(2,11,3,3,'#FFFBD0')+R(11,11,3,3,'#FFFBD0')+R(5,5,6,6,'#FEE52A')+R(7,4,2,1,'#FEE52A')+R(7,11,2,1,'#FEE52A')+R(4,7,1,2,'#FEE52A')+R(11,7,1,2,'#FEE52A')+R(6,6,4,4,'#E89000'),
+  strawberry: R(5,0,2,3,'#2D8B2D')+R(9,0,2,3,'#2D8B2D')+R(7,0,2,4,'#3DBD3D')+R(4,3,8,2,'#E83232')+R(3,5,10,4,'#E83232')+R(3,9,10,3,'#E83232')+R(4,12,8,2,'#E83232')+R(6,14,4,1,'#E83232')+R(5,5,1,1,'#FFAAAA')+R(9,5,1,1,'#FFAAAA')+R(12,7,1,1,'#FFAAAA')+R(3,8,1,1,'#FFAAAA')+R(7,9,1,1,'#FFAAAA')+R(11,8,1,1,'#FFAAAA'),
+  orange: R(7,0,2,2,'#4CAF50')+R(6,1,1,1,'#4CAF50')+R(5,2,6,2,'#FFA500')+R(3,4,10,6,'#FFA500')+R(4,10,8,3,'#FFA500')+R(6,13,4,2,'#FFA500')+R(5,4,3,3,'#FFD07A')+R(4,5,1,2,'#FFD07A'),
+  grapes: R(7,0,2,3,'#6B4226')+R(8,1,4,1,'#4CAF50')+R(2,3,4,4,'#8B3CBF')+R(3,4,2,2,'#C280F0')+R(6,3,4,4,'#8B3CBF')+R(7,4,2,2,'#C280F0')+R(10,3,4,4,'#8B3CBF')+R(11,4,2,2,'#C280F0')+R(4,8,4,4,'#8B3CBF')+R(5,9,2,2,'#C280F0')+R(8,8,4,4,'#8B3CBF')+R(9,9,2,2,'#C280F0')+R(6,13,4,3,'#8B3CBF')+R(7,14,2,1,'#C280F0'),
+  rainbow: R(0,10,4,6,'#E8E8FF')+R(0,8,5,5,'#F2F2FF')+R(12,10,4,6,'#E8E8FF')+R(11,8,5,5,'#F2F2FF')+R(3,5,10,1,'#E83232')+R(2,6,12,1,'#FF8C00')+R(2,7,12,1,'#FEE52A')+R(2,8,12,1,'#4CAF50')+R(2,9,12,1,'#2196F3')+R(3,10,10,1,'#7B1FA2'),
+  poop: R(7,0,2,2,'#A0632A')+R(6,2,4,1,'#8B4A1E')+R(5,3,6,2,'#8B4A1E')+R(4,5,8,2,'#7A3E14')+R(3,7,10,4,'#7A3E14')+R(2,11,12,3,'#6B3310')+R(3,14,10,1,'#5C2C0E')+R(7,1,1,1,'#C47B3A')+R(6,3,2,1,'#B06E33')+R(5,8,2,2,'#1a1a1a')+R(9,8,2,2,'#1a1a1a')+R(5,8,1,1,'#fff')+R(9,8,1,1,'#fff')+R(5,11,1,1,'#3a1a05')+R(9,11,1,1,'#3a1a05')+R(6,12,4,1,'#3a1a05')+R(13,2,1,4,'#9ACD32')+R(14,4,1,1,'#9ACD32')+R(12,1,1,1,'#9ACD32'),
+};
+const GOOD_KEYS = ['blossom','daisy','strawberry','orange','grapes','rainbow'];
+const BASE_PTS  = { blossom:3, daisy:2, strawberry:2, orange:2, grapes:2, rainbow:5, poop:-4 };
+const PCOL      = { blossom:'#FF85AB', daisy:'#FEE52A', strawberry:'#E83232', orange:'#FFA500', grapes:'#B46FE0', rainbow:'#FEE52A', poop:'#8B4A1E' };
+const ITEM_SIZE = 52, COLLECT_R = 36;
+
+const spriteCache = {};
+function cacheSprites() {
+  return Promise.all([...GOOD_KEYS,'poop'].map(k => new Promise(res => {
+    const img = new Image();
+    const blob = new Blob([mkSvg(52,PA[k])],{type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    img.onload=()=>{ URL.revokeObjectURL(url); spriteCache[k]=img; res(); };
+    img.onerror=res; img.src=url;
+  })));
+}
+
+function triggerShake() {
+  document.body.classList.remove('shake');
+  void document.body.offsetWidth;
+  document.body.classList.add('shake');
+  document.body.addEventListener('animationend',()=>document.body.classList.remove('shake'),{once:true});
+}
+
+// ── Screen nav ────────────────────────────────────────────────────────────────
+const SCREENS = ['s-countdown','s-result'];
+function showScreen(id) {
+  SCREENS.forEach(s=>{ document.getElementById(s).style.display = s===id?'flex':'none'; });
+}
+window.restartWait = ()=>{ if(resultTimer){clearInterval(resultTimer);resultTimer=null;} showScreen(null); waitState='detecting'; faceCount=0; faceInLeft=false; faceInRight=false; stableMs=0; autoCountdown=0; lastCountTick=0; };
+
+// ── Canvas particles ──────────────────────────────────────────────────────────
+let particles = [];
+function spawnPetals(x,y,key) {
+  const color=PCOL[key]||'#FEE52A', count=key==='rainbow'?16:9;
+  for(let i=0;i<count;i++){
+    const a=(i/count)*Math.PI*2+Math.random()*0.4, sp=85+Math.random()*90;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,color,life:0.55,maxLife:0.55,rot:Math.random()*Math.PI*2,rotV:(Math.random()-0.5)*7});
+  }
+}
+
+let floatingTexts = [];
+function spawnText(x,y,text,color='#fff',size=22) {
+  floatingTexts.push({x,y,text,color,size,life:0.75,maxLife:0.75,vy:-75});
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const GAME_TIME      = 45;
+const FEVER_DURATION = 4.5;
+const FEVER_RADIUS   = 280;
+const FEVER_PULL     = 420;
+const STREAK_FEVER   = 7;
+const STREAK_MULT_AT = 5;
+
+function getDiff(elapsed, streak) {
+  const t=Math.min(elapsed/38,1), sq=t*t;
+  return {
+    maxItems:      Math.min(16, 4 + Math.floor(t*12)),
+    spawnInterval: Math.max(0.26, 1.45 - t*1.12),
+    fallSpeed:     90 + t*180 + sq*40 + streak*4,
+    deadChance:    Math.min(0.44, 0.07 + t*0.27 + Math.min(streak*0.032, 0.18)),
+  };
+}
+
+// ── Audio ─────────────────────────────────────────────────────────────────────
+let audioCtx = null, masterGain = null, musicGain = null;
+let musicStep = 0, nextBeat = 0;
+
+// Chiptune melody: two bars of a simple minor-pentatonic motif
+const MELODY = [262,330,392,330,262,196,220,262, 330,392,523,392,330,262,196,220];
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.8;
+  masterGain.connect(audioCtx.destination);
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.12;
+  musicGain.connect(masterGain);
+}
+
+let _lastSfxTime = 0;
+function sfx(freq, type, dur, vol=0.28, bend=null) {
+  if (!audioCtx || !masterGain || audioCtx.state !== 'running') return;
+  // Rate-limit to prevent audio graph overflow (max ~10 nodes/100ms)
+  const now100 = Date.now();
+  if (now100 - _lastSfxTime < 40) return;
+  _lastSfxTime = now100;
+  const now = audioCtx.currentTime;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g); g.connect(masterGain);
+  o.type = type;
+  o.frequency.setValueAtTime(freq, now);
+  if (bend) o.frequency.exponentialRampToValueAtTime(bend, now + dur * 0.8);
+  g.gain.setValueAtTime(vol, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  o.start(now); o.stop(now + dur + 0.01);
+}
+
+function playSound(type) {
+  if (!audioCtx) return;
+  switch (type) {
+    case 'gobble':   sfx(440,'square',0.12,0.22,880); break;
+    case 'gobble2':  sfx(550,'square',0.12,0.22,1100); break;
+    case 'poop':     sfx(180,'sawtooth',0.22,0.18,70); break;
+    case 'rainbow':
+      [523,659,784,1047].forEach((f,i)=>setTimeout(()=>sfx(f,'square',0.1,0.18),i*50));
+      break;
+    case 'fever':
+      [262,330,392,523,659,784,1047].forEach((f,i)=>setTimeout(()=>sfx(f,'square',0.08,0.22),i*40));
+      break;
+    case 'beep':     sfx(880,'sine',0.09,0.25); break;
+    case 'go':
+      [523,659,784,1047,1318].forEach((f,i)=>setTimeout(()=>sfx(f,'square',0.1,0.2),i*45));
+      break;
+    case 'gameover':
+      [523,494,440,392,330,262].forEach((f,i)=>setTimeout(()=>sfx(f,'square',0.18,0.18),i*140));
+      break;
+  }
+}
+
+function tickMusic() {
+  if (!audioCtx || !gameActive) return;
+  const now = audioCtx.currentTime;
+  if (now < nextBeat) return;
+  const bpm = feverTimer > 0 ? 200 : 128;
+  const beat = 60 / bpm / 2; // eighth note
+  const freq = MELODY[musicStep % MELODY.length];
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g); g.connect(musicGain);
+  o.type = 'square';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(1, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + beat * 0.75);
+  o.start(now); o.stop(now + beat);
+  musicStep++;
+  nextBeat = now + beat;
+}
+
+// Initialise audio on first user gesture
+document.addEventListener('click', initAudio, { once: true });
+document.addEventListener('touchstart', initAudio, { once: true });
+
+// ── Game state ────────────────────────────────────────────────────────────────
+let gameActive=false;
+let items=[], mouth={}, mouth2={}, timeLeft, lastTime, spawnTimer;
+let streak=0, maxStreak=0, feverTimer=0, feverCount=0, score=0, scoreP2=0;
+let eatFlash=0, poopFlash=0;
+
+function startGame() {
+  items=[]; particles=[]; floatingTexts=[];
+  mouth={x:0,y:0,open:false,active:false};
+  mouth2={x:0,y:0,open:false,active:false};
+  timeLeft=GAME_TIME; lastTime=null; spawnTimer=0; _spawnSide=0;
+  streak=0; maxStreak=0; feverTimer=0; feverCount=0; score=0; scoreP2=0;
+  musicStep=0; nextBeat=0;
+  initAudio(); playSound('go');
+  eatFlash=0; poopFlash=0;
+  gameActive=true;
+  document.getElementById('hud-timer').style.display='block';
+  document.getElementById('fever-overlay').className='';
+}
+
+// ── Wait state ────────────────────────────────────────────────────────────────
+// 'detecting' → both faces stable → auto-countdown → game starts
+let waitState   = 'detecting'; // 'detecting' | 'counting'
+let faceCount   = 0;
+let faceInLeft  = false; // face detected on left half of screen
+let faceInRight = false; // face detected on right half of screen
+let stableMs    = 0;
+const STABLE_NEEDED = 1200; // ms both faces must be stable before countdown
+let autoCountdown = 0;      // 10..1, 0 = not counting
+let lastCountTick = 0;      // timestamp of last second tick
+
+// ── Update (game) ─────────────────────────────────────────────────────────────
+function updateGame(dt) {
+  timeLeft-=dt;
+  if (timeLeft<=0) {
+    timeLeft=0; gameActive=false;
+    document.getElementById('hud-timer').style.display='none';
+    document.getElementById('fever-overlay').className='';
+    setTimeout(endDuello, 700); return;
+  }
+  document.getElementById('hud-timer').textContent=Math.ceil(timeLeft)+'s';
+
+  const elapsed=GAME_TIME-timeLeft;
+  const diff=getDiff(elapsed,streak);
+
+  if (feverTimer>0) {
+    feverTimer=Math.max(0,feverTimer-dt);
+    if (feverTimer<=0) {
+      document.getElementById('fever-overlay').className='';
+      spawnText(canvas.width/2, canvas.height*0.45,'FEVER OVER','rgba(255,255,255,0.5)',18);
+    }
+  }
+  if (eatFlash>0) eatFlash=Math.max(0,eatFlash-dt);
+  if (poopFlash>0) poopFlash=Math.max(0,poopFlash-dt);
+
+  spawnTimer-=dt;
+  if (spawnTimer<=0 && items.length<diff.maxItems) {
+    spawnItem(diff);
+    spawnTimer=diff.spawnInterval+Math.random()*0.32;
+  }
+
+  const H=canvas.height;
+  items=items.filter(item=>{
+    if (item.collected){ item.collectAnim+=dt; return item.collectAnim<0.18; }
+    item.y+=diff.fallSpeed*dt;
+    item.age+=dt;
+    if (feverTimer>0 && mouth.active) {
+      const dx=mouth.x-item.x, dy=mouth.y-item.y, dist=Math.hypot(dx,dy);
+      if (dist<FEVER_RADIUS && dist>1) {
+        const dir=item.dead?-0.4:1;
+        item.x+=(dx/dist)*FEVER_PULL*dt*dir;
+        item.y+=(dy/dist)*FEVER_PULL*dt*dir;
+      }
+    }
+    if (item.y>=H+ITEM_SIZE) {
+      if (!item.dead && !item.collected && streak>0) {
+        streak=0;
+        spawnText(canvas.width/2, canvas.height*0.5,'MISSED — STREAK LOST','#FF4444',18);
+      }
+      return false;
+    }
+    return true;
+  });
+
+  items.forEach(item=>{
+    if (item.collected) return;
+    if (mouth.active && mouth.open && item.x < W/2 && Math.hypot(mouth.x-item.x,mouth.y-item.y)<COLLECT_R+ITEM_SIZE/2) {
+      item.collected=true; item.collectAnim=0; collectItem(item, 1);
+    } else if (mouth2.active && mouth2.open && item.x >= W/2 && Math.hypot(mouth2.x-item.x,mouth2.y-item.y)<COLLECT_R+ITEM_SIZE/2) {
+      item.collected=true; item.collectAnim=0; collectItem(item, 2);
+    }
+  });
+
+  function collectItem(item, player) {
+    const multiplier = feverTimer>0 ? 2 : (streak>=STREAK_MULT_AT ? 1.5 : 1);
+    if (item.dead) {
+      if (player===1) { score=Math.max(0,score-4); streak=0; poopFlash=0.65; }
+      else            { scoreP2=Math.max(0,scoreP2-4); }
+      playSound('poop');
+      triggerShake();
+      spawnPetals(item.x,item.y,'poop');
+      spawnText(item.x,item.y-28,'-4 💩','#8B4A1E',24);
+      if (player===1) spawnText(item.x,item.y+18,'STREAK LOST','#FF4444',16);
+    } else {
+      const earned=Math.round(BASE_PTS[item.key]*multiplier);
+      if (player===1) {
+        score+=earned; streak++;
+        if (streak>maxStreak) maxStreak=streak;
+        eatFlash=0.22;
+      } else { scoreP2+=earned; }
+      playSound(item.key==='rainbow' ? 'rainbow' : player===2 ? 'gobble2' : 'gobble');
+      spawnPetals(item.x,item.y,item.key);
+      const bonus=earned>BASE_PTS[item.key];
+      spawnText(item.x,item.y-28,`+${earned}${player===2?' P2':''}`,bonus?'#FEE52A':player===2?'#F83098':'#fff',bonus?26:22);
+      if (player===1) {
+        const W=canvas.width, midY=canvas.height*0.42;
+        if (streak===3) spawnText(W/2,midY,'🔥 3 IN A ROW!','#FFA500',20);
+        if (streak===5) spawnText(W/2,midY,'⚡ 5x — 1.5× SCORE!','#FF6600',22);
+        if (streak===6) spawnText(W/2,midY,'💥 ONE MORE!!','#FF0000',28);
+        if (streak>=STREAK_FEVER) {
+          streak=0; feverTimer=FEVER_DURATION; feverCount++;
+          playSound('fever');
+          document.getElementById('fever-overlay').className='active';
+          spawnText(W/2,midY-20,'🔥 GOBBLE FEVER 🔥','#FEE52A',32);
+          spawnText(W/2,midY+24,'2× + MAGNET','#FEE52A',18);
+        }
+      }
+    }
+  }
+
+  particles=particles.filter(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=115*dt;p.rot+=p.rotV*dt;p.life-=dt;return p.life>0;});
+  floatingTexts=floatingTexts.filter(ft=>{ft.y+=ft.vy*dt;ft.life-=dt;return ft.life>0;});
+}
+
+let _spawnSide = 0;
+function spawnItem(diff) {
+  const W=canvas.width, margin=40;
+  // Alternate sides so both halves get equal items
+  const half = _spawnSide % 2;
+  _spawnSide++;
+  const isDead=Math.random()<diff.deadChance;
+  let key = isDead ? 'poop' : GOOD_KEYS[Math.floor(Math.random()*GOOD_KEYS.length)];
+  if (!isDead && streak>=7 && streak<STREAK_FEVER && Math.random()<0.35) key='rainbow';
+  const xMin = half===0 ? margin : W/2+margin;
+  const xMax = half===0 ? W/2-margin : W-margin;
+  items.push({key,x:xMin+Math.random()*(xMax-xMin),y:-ITEM_SIZE,dead:isDead,age:0,collected:false,collectAnim:0});
+}
+
+let resultTimer = null;
+function endDuello() {
+  const winner = score===scoreP2 ? null : (score>scoreP2 ? 'PLAYER 1' : 'PLAYER 2');
+  document.getElementById('r-winner').textContent = winner ? `🏆 ${winner} WINS!` : '🤝 TIE GAME!';
+  document.getElementById('r-p1-label').textContent = 'PLAYER 1';
+  document.getElementById('r-p1-score').textContent = score;
+  document.getElementById('r-p2-label').textContent = 'PLAYER 2';
+  document.getElementById('r-p2-score').textContent = scoreP2;
+  document.getElementById('r-p1-box').style.background = score>scoreP2 ? 'rgba(254,229,42,0.15)' : '';
+  document.getElementById('r-p2-box').style.background = scoreP2>score ? 'rgba(248,48,152,0.15)' : '';
+  playSound('gameover');
+  showScreen('s-result');
+  // Auto-restart after 30 seconds
+  if (resultTimer) clearInterval(resultTimer);
+  let secs = 30;
+  const cdEl = document.getElementById('r-countdown');
+  cdEl.textContent = `(${secs}s)`;
+  resultTimer = setInterval(() => {
+    secs--;
+    if (secs <= 0) { clearInterval(resultTimer); restartWait(); }
+    else cdEl.textContent = `(${secs}s)`;
+  }, 1000);
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+function rrect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+// Draw pixel-art suited character (fighting game select screen style)
+function drawPixelChar(cx, cy, size, active, color) {
+  const u = size / 18;
+  const pulse = active ? 1 + 0.025 * Math.sin(Date.now() / 300) : 1;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(pulse, pulse);
+  ctx.imageSmoothingEnabled = false;
+
+  const suit  = active ? color : 'rgba(255,255,255,0.12)';
+  const dark  = active ? 'rgba(8,8,8,0.92)' : 'rgba(255,255,255,0.06)';
+  const white = active ? '#ffffff' : 'rgba(255,255,255,0.16)';
+  const tie   = active ? '#CC2233' : 'rgba(255,255,255,0.08)';
+
+  function px(x, y, w, h, c) {
+    ctx.fillStyle = c;
+    ctx.fillRect(Math.round(x*u), Math.round(y*u), Math.round(w*u), Math.round(h*u));
+  }
+
+  // Head
+  px(-3, -10, 6, 6, dark);
+  px(-2, -11, 4, 1, dark);
+  px(-2,  -4, 4, 1, dark);
+
+  // Suit body + shoulders
+  px(-5, -4, 10, 11, suit);
+  px(-7, -3,  2,  8, suit);
+  px( 5, -3,  2,  8, suit);
+
+  // White lapels
+  px(-3, -4, 2, 5, white);
+  px( 1, -4, 2, 5, white);
+
+  // Tie
+  px(-1, -4, 2, 8, tie);
+
+  // Suit border glow when active
+  if (active) {
+    ctx.strokeStyle = color + 'aa';
+    ctx.lineWidth = Math.max(1.5, u * 0.5);
+    ctx.strokeRect(-7*u, -4*u, 14*u, 11*u);
+  }
+
+  // ? on face
+  ctx.font = `900 ${Math.round(4.8*u)}px "Space Grotesk",Arial`;
+  ctx.fillStyle = active ? color : 'rgba(255,255,255,0.22)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('?', 0, -7*u);
+
+  ctx.restore();
+}
+
+// ── Wait screen renderer ──────────────────────────────────────────────────────
+function renderWait(faceCount, stableMs) {
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const p1Active = faceInLeft;
+  const p2Active = faceInRight;
+
+  // Zone backgrounds
+  if (p1Active) {
+    ctx.fillStyle = 'rgba(254,229,42,0.07)';
+    ctx.fillRect(0, 0, W/2, H);
+  }
+  if (p2Active) {
+    ctx.fillStyle = 'rgba(248,48,152,0.07)';
+    ctx.fillRect(W/2, 0, W/2, H);
+  }
+
+  // Dark overlay on inactive zones
+  if (!p1Active) { ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W/2,H); }
+  if (!p2Active) { ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(W/2,0,W/2,H); }
+
+  // Zone borders when active
+  if (p1Active) {
+    ctx.strokeStyle = '#FEE52A'; ctx.lineWidth = 2; ctx.globalAlpha = 0.4;
+    ctx.strokeRect(0, 0, W/2, H);
+    ctx.globalAlpha = 1;
+  }
+  if (p2Active) {
+    ctx.strokeStyle = '#F83098'; ctx.lineWidth = 2; ctx.globalAlpha = 0.4;
+    ctx.strokeRect(W/2, 0, W/2, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // Characters — size relative to zone width
+  const charSize = Math.min(W * 0.22, H * 0.38);
+  const charCY = H * 0.5;
+  drawPixelChar(W * 0.25, charCY, charSize, p1Active, '#FEE52A');
+  drawPixelChar(W * 0.75, charCY, charSize, p2Active, '#F83098');
+
+  // Player labels
+  const labelSize = Math.max(14, Math.min(28, W * 0.03));
+  ctx.font = `900 ${labelSize}px "Space Grotesk",Arial`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = p1Active ? '#FEE52A' : 'rgba(255,255,255,0.25)';
+  ctx.fillText('PLAYER 1', W * 0.25, charCY - charSize * 0.7);
+  ctx.fillStyle = p2Active ? '#F83098' : 'rgba(255,255,255,0.25)';
+  ctx.fillText('PLAYER 2', W * 0.75, charCY - charSize * 0.7);
+
+  // Status under characters
+  const statusSize = Math.max(12, Math.min(20, W * 0.022));
+  ctx.font = `700 ${statusSize}px "Space Grotesk",Arial`;
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = p1Active ? '#FEE52A' : 'rgba(255,255,255,0.2)';
+  ctx.fillText(p1Active ? 'READY ✓' : 'GET IN FRAME', W * 0.25, charCY + charSize * 0.6);
+  ctx.fillStyle = p2Active ? '#F83098' : 'rgba(255,255,255,0.2)';
+  ctx.fillText(p2Active ? 'READY ✓' : 'GET IN FRAME', W * 0.75, charCY + charSize * 0.6);
+
+  // Title at top
+  const titleSize = Math.max(24, Math.min(60, W * 0.06));
+  ctx.save();
+  ctx.textBaseline = 'top'; ctx.textAlign = 'center';
+  ctx.font = `900 ${titleSize}px "Space Grotesk",Arial`;
+  ctx.fillStyle = '#fff';
+  ctx.fillText('GOBBLE', W/2, titleSize * 0.4);
+  ctx.font = `700 ${Math.round(titleSize*0.38)}px "Space Grotesk",Arial`;
+  ctx.fillStyle = '#F83098';
+  ctx.fillText(TEST_MODE ? 'DUELLO — TEST MODE' : 'DUELLO', W/2, titleSize * 1.5);
+  ctx.restore();
+
+  // Center CTA / countdown
+  const ctaCY = H * 0.88;
+  if (autoCountdown > 0) {
+    // Big countdown number in center
+    const numSize = Math.max(60, Math.min(160, H * 0.22));
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `900 ${numSize}px "Space Grotesk",Arial`;
+    ctx.fillStyle = '#fff';
+    ctx.globalAlpha = 0.92;
+    ctx.fillText(autoCountdown, W / 2, H * 0.5);
+    ctx.globalAlpha = 1;
+    ctx.font = `700 ${Math.max(14, Math.min(24, W * 0.026))}px "Space Grotesk",Arial`;
+    ctx.fillStyle = '#FEE52A';
+    ctx.fillText('STARTING…', W / 2, H * 0.5 + numSize * 0.7);
+    ctx.restore();
+  } else if (p1Active && p2Active) {
+    const pct = Math.min(1, stableMs / STABLE_NEEDED);
+    const barW = Math.min(240, W * 0.25);
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fillRect(W/2 - barW/2, ctaCY - 4, barW, 8);
+    ctx.fillStyle = '#FEE52A';
+    ctx.fillRect(W/2 - barW/2, ctaCY - 4, barW * pct, 8);
+    ctx.font = `700 14px "Space Grotesk",Arial`;
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('HOLD STILL…', W/2, ctaCY - 10);
+  } else {
+    const msgSize = Math.max(13, Math.min(22, W * 0.024));
+    ctx.font = `700 ${msgSize}px "Space Grotesk",Arial`;
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText((!faceInLeft && !faceInRight) ? 'BOTH PLAYERS GET IN FRAME' : 'WAITING FOR SECOND PLAYER…', W/2, ctaCY);
+  }
+}
+
+// ── Game render ───────────────────────────────────────────────────────────────
+function drawPlayerHUD(px, py, pw, ph, pr, sc, borderC, mouthRef) {
+  ctx.fillStyle='rgba(8,8,8,0.88)'; rrect(px,py,pw,ph,pr); ctx.fill();
+  ctx.strokeStyle=borderC; ctx.lineWidth=2.5; rrect(px,py,pw,ph,pr); ctx.stroke();
+  const hr=20, hx=px+13+hr, hy=py+ph/2;
+  ctx.fillStyle='#F5CFA0'; ctx.beginPath(); ctx.arc(hx,hy,hr,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle=borderC; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(hx,hy,hr,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle='#1a1a1a';
+  const isEat=mouthRef.active&&mouthRef.open;
+  const ey=isEat?1.5:3.5;
+  ctx.beginPath();ctx.ellipse(hx-6,hy-6,2.5,ey,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(hx+6,hy-6,2.5,ey,0,0,Math.PI*2);ctx.fill();
+  if (isEat) {
+    ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.ellipse(hx,hy+7,8,9,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#CC2233';ctx.beginPath();ctx.ellipse(hx,hy+13,5,4,0,0,Math.PI);ctx.fill();
+    ctx.fillStyle='#fff';ctx.fillRect(hx-7,hy+1,14,6);
+  } else {
+    ctx.strokeStyle='#1a1a1a';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(hx,hy+3,8,0.1*Math.PI,0.9*Math.PI);ctx.stroke();
+  }
+  ctx.font='900 26px "Space Grotesk",monospace'; ctx.fillStyle='#fff';
+  ctx.textBaseline='middle'; ctx.textAlign='left';
+  ctx.fillText(sc, px+13+hr*2+10, py+ph/2);
+}
+
+function drawStreakBar() {
+  const W=canvas.width, H=canvas.height;
+  const dotR=6, gap=3, totalW=STREAK_FEVER*(dotR*2+gap)-gap;
+  const sx=(W-totalW)/2, y=H-24;
+  if (feverTimer>0) {
+    const barW=180, bx=(W-barW)/2, by=H-18;
+    ctx.fillStyle='rgba(254,229,42,0.15)'; ctx.fillRect(bx,by,barW,6);
+    ctx.fillStyle='#FEE52A'; ctx.fillRect(bx,by,(feverTimer/FEVER_DURATION)*barW,6);
+    return;
+  }
+  for(let i=0;i<STREAK_FEVER;i++){
+    const cx=sx+i*(dotR*2+gap)+dotR;
+    if (i<streak) {
+      ctx.fillStyle=i/STREAK_FEVER<0.4?'#1502FF':i/STREAK_FEVER<0.7?'#FF6600':'#FF2200';
+      ctx.beginPath(); ctx.arc(cx,y,dotR,0,Math.PI*2); ctx.fill();
+    } else {
+      ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(cx,y,dotR,0,Math.PI*2); ctx.stroke();
+    }
+  }
+}
+
+function renderGame() {
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  if (!gameActive) return;
+
+  const prog=timeLeft/GAME_TIME;
+  ctx.fillStyle='rgba(248,48,152,0.12)'; ctx.fillRect(0,H-4,W*prog,4);
+  ctx.fillStyle=prog<0.25?'#FEE52A':'#F83098'; ctx.fillRect(0,H-4,W*prog,2);
+
+  if (feverTimer>0) {
+    ctx.fillStyle=`rgba(254,229,42,${0.04+0.03*Math.sin(Date.now()/110)})`;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=2;
+  ctx.setLineDash([12,8]); ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
+  ctx.setLineDash([]);
+
+  items.forEach(item=>{
+    if (!spriteCache[item.key]) return;
+    let alpha=1,scale=1;
+    if (item.age<0.18) alpha=item.age/0.18;
+    if (item.collected){ scale=1+item.collectAnim*3; alpha=1-item.collectAnim/0.18; }
+    ctx.save();
+    ctx.globalAlpha=Math.max(0,alpha);
+    ctx.translate(item.x,item.y); ctx.scale(scale,scale);
+    if (feverTimer>0&&!item.dead&&!item.collected&&mouth.active) {
+      const d=Math.hypot(mouth.x-item.x,mouth.y-item.y);
+      if (d<FEVER_RADIUS) {
+        ctx.strokeStyle='rgba(254,229,42,0.55)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.arc(0,0,ITEM_SIZE/2+6,0,Math.PI*2); ctx.stroke();
+      }
+    }
+    ctx.drawImage(spriteCache[item.key],-ITEM_SIZE/2,-ITEM_SIZE/2,ITEM_SIZE,ITEM_SIZE);
+    if (!item.dead&&!item.collected&&BASE_PTS[item.key]>2) {
+      ctx.globalAlpha=Math.max(0,alpha*0.9);
+      ctx.font='700 12px "Space Grotesk",Arial';
+      ctx.fillStyle='#FEE52A'; ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText('+'+BASE_PTS[item.key],0,ITEM_SIZE/2+2);
+    }
+    ctx.restore();
+  });
+
+  particles.forEach(p=>{
+    ctx.save(); ctx.globalAlpha=p.life/p.maxLife; ctx.fillStyle=p.color;
+    ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillRect(-4,-5.5,8,11); ctx.restore();
+  });
+
+  floatingTexts.forEach(ft=>{
+    const a=ft.life/ft.maxLife;
+    ctx.save(); ctx.globalAlpha=a*a;
+    ctx.font=`900 ${ft.size}px "Space Grotesk",Arial`;
+    ctx.fillStyle=ft.color; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=3;
+    ctx.strokeText(ft.text,ft.x,ft.y); ctx.fillText(ft.text,ft.x,ft.y);
+    ctx.restore();
+  });
+
+  // P1 mouth (yellow)
+  if (mouth.active) {
+    const fever=feverTimer>0, c=fever?'#FEE52A':'#FEE52A';
+    if (fever) { ctx.strokeStyle='rgba(254,229,42,0.35)'; ctx.lineWidth=14; ctx.beginPath(); ctx.arc(mouth.x,mouth.y,34,0,Math.PI*2); ctx.stroke(); }
+    ctx.strokeStyle=c; ctx.lineWidth=mouth.open?3:2; ctx.globalAlpha=mouth.open?1:0.65;
+    ctx.beginPath(); ctx.arc(mouth.x,mouth.y,30,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle=c; ctx.globalAlpha=mouth.open?0.5:0.14;
+    if (mouth.open) { ctx.beginPath(); ctx.arc(mouth.x,mouth.y,22,0,Math.PI*2); ctx.fill(); }
+    else { ctx.beginPath(); ctx.ellipse(mouth.x,mouth.y,14,4,0,0,Math.PI*2); ctx.fill(); }
+    ctx.globalAlpha=1;
+  }
+
+  // P2 mouth (pink)
+  if (mouth2.active) {
+    ctx.strokeStyle='#F83098'; ctx.lineWidth=mouth2.open?3:2; ctx.globalAlpha=mouth2.open?1:0.65;
+    ctx.beginPath(); ctx.arc(mouth2.x,mouth2.y,30,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle='#F83098'; ctx.globalAlpha=mouth2.open?0.5:0.14;
+    if (mouth2.open) { ctx.beginPath(); ctx.arc(mouth2.x,mouth2.y,22,0,Math.PI*2); ctx.fill(); }
+    else { ctx.beginPath(); ctx.ellipse(mouth2.x,mouth2.y,14,4,0,0,Math.PI*2); ctx.fill(); }
+    ctx.globalAlpha=1;
+  }
+
+  const pw=180, ph=64, pr=10;
+  drawPlayerHUD(10,10,pw,ph,pr, score, feverTimer>0?'#FEE52A':'#FEE52A', mouth);
+  drawPlayerHUD(canvas.width-pw-10,10,pw,ph,pr, scoreP2, '#F83098', mouth2);
+
+  drawStreakBar();
+}
+</script>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver }
+  from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+
+let fl, mlReady = false;
+let lastLoopTs = 0;
+
+// ── Init camera + mic + ML ────────────────────────────────────────────────────
+async function earlyInit() {
+  // Request camera + mic together
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'user' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+  } catch { stream = null; }
+  if (!stream) return;
+
+  video.srcObject = stream;
+  await new Promise(r => { video.onloadeddata = r; });
+
+  await cacheSprites();
+
+  const vis = await FilesetResolver.forVisionTasks(
+    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+  );
+  fl = await FaceLandmarker.createFromOptions(vis, {
+    baseOptions: {
+      modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+      delegate: 'GPU'
+    },
+    runningMode: 'VIDEO', numFaces: 2,
+    minFaceDetectionConfidence: 0.5, minTrackingConfidence: 0.5
+  });
+  if (video.videoWidth) { try { fl.detectForVideo(video, performance.now()); } catch {} }
+  mlReady = true;
+  requestAnimationFrame(mainLoop);
+}
+
+earlyInit().catch(console.error);
+
+// ── Main loop ─────────────────────────────────────────────────────────────────
+let lastDetectTs = 0;
+let lastWaitRenderTs = 0;
+
+function mainLoop(ts) {
+  requestAnimationFrame(mainLoop);
+  if (!mlReady) return;
+
+  const dt = Math.min((ts - (lastLoopTs||ts)) / 1000, 0.05);
+  lastLoopTs = ts;
+
+  if (gameActive) {
+    // Game loop: detect both faces
+    if (ts - lastDetectTs >= 28) {
+      lastDetectTs = ts;
+      try {
+        const fr = fl.detectForVideo(video, performance.now());
+        const cx = canvas.width, cy = canvas.height;
+        // Each face assigned to the zone its nose tip is in (stable regardless of mouth state)
+        mouth.active=false; mouth2.active=false;
+        (fr.faceLandmarks||[]).slice(0,2).forEach(lm=>{
+          const screenX = 1 - lm[4].x; // nose tip, mirrored
+          const m = (!TEST_MODE && screenX >= 0.5) ? mouth2 : mouth;
+          // If left zone already claimed and this face is also left, skip
+          if (m === mouth && mouth.active) return;
+          if (m === mouth2 && mouth2.active) return;
+          const ul=lm[13],ll=lm[14],lc=lm[61],rc=lm[291];
+          m.x=(1-(ul.x+ll.x)/2)*cx; m.y=((ul.y+ll.y)/2)*cy;
+          const mH=Math.hypot((ul.x-ll.x)*cx,(ul.y-ll.y)*cy);
+          const mW=Math.hypot((lc.x-rc.x)*cx,(lc.y-rc.y)*cy);
+          m.open=mW>0&&(mH/mW)>0.28; m.active=true;
+        });
+        // Test mode: mirror P1 to P2 when only one face present
+        if (TEST_MODE && mouth.active && !mouth2.active) {
+          mouth2.x=mouth.x; mouth2.y=mouth.y; mouth2.open=mouth.open; mouth2.active=true;
+        }
+      } catch { mouth.active=false; mouth2.active=false; }
+    }
+    tickMusic();
+    updateGame(dt);
+    renderGame();
+    return;
+  }
+
+  // Waiting loop
+  if (ts - lastDetectTs >= 80) {
+    lastDetectTs = ts;
+    try {
+      const fr = fl.detectForVideo(video, performance.now());
+      const lms = fr.faceLandmarks || [];
+      faceCount = lms.length;
+      faceInLeft = false; faceInRight = false;
+      lms.forEach(lm => {
+        // use nose tip (lm[4]) — stable regardless of mouth state
+        const sx = 1 - lm[4].x;
+        if (sx < 0.5) faceInLeft = true; else faceInRight = true;
+      });
+      // Test mode: 1 face unlocks both zones
+      if (TEST_MODE && faceCount >= 1) { faceInLeft = true; faceInRight = true; }
+    } catch { faceCount = 0; faceInLeft = false; faceInRight = false; }
+  }
+
+  // Stability tracking + auto-countdown (require one face per side)
+  if (waitState === 'counting') {
+    // Once counting, never reset — let it run to zero
+  } else {
+    const bothSides = faceInLeft && faceInRight;
+    if (bothSides) {
+      stableMs += dt * 1000;
+      if (stableMs >= STABLE_NEEDED) {
+        waitState = 'counting';
+        autoCountdown = 5;
+        lastCountTick = performance.now();
+      }
+    } else {
+      stableMs = Math.max(0, stableMs - dt * 600);
+    }
+  }
+
+  // Tick the countdown every second
+  if (autoCountdown > 0) {
+    if (performance.now() - lastCountTick >= 1000) {
+      lastCountTick += 1000;
+      autoCountdown--;
+      playSound('beep');
+      if (autoCountdown === 0) { beginCountdown(); return; }
+    }
+  }
+
+  // Render wait screen ~30fps
+  if (ts - lastWaitRenderTs >= 33) {
+    lastWaitRenderTs = ts;
+    renderWait(faceCount, stableMs);
+  }
+}
+
+
+function beginCountdown() {
+  if (gameActive) return;
+  startGame();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
