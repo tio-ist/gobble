@@ -306,7 +306,7 @@ function tickMusic() {
   if (!audioCtx || !gameActive) return;
   const now = audioCtx.currentTime;
   if (now < nextBeat) return;
-  const bpm = feverTimer > 0 ? 200 : 128;
+  const bpm = (feverTimer > 0 || feverTimer2 > 0) ? 200 : 128;
   const beat = 60 / bpm / 2; // eighth note
   const freq = MELODY[musicStep % MELODY.length];
   const o = audioCtx.createOscillator();
@@ -328,7 +328,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
 // ── Game state ────────────────────────────────────────────────────────────────
 let gameActive=false;
 let items=[], mouth={}, mouth2={}, timeLeft, lastTime, spawnTimer;
-let streak=0, maxStreak=0, feverTimer=0, feverCount=0, score=0, scoreP2=0;
+let streak=0, maxStreak=0, feverTimer=0, feverCount=0, score=0;
+let streak2=0, maxStreak2=0, feverTimer2=0, feverCount2=0, scoreP2=0;
 let eatFlash=0, poopFlash=0;
 
 function startGame() {
@@ -336,7 +337,8 @@ function startGame() {
   mouth={x:0,y:0,open:false,active:false};
   mouth2={x:0,y:0,open:false,active:false};
   timeLeft=GAME_TIME; lastTime=null; spawnTimer=0; _spawnSide=0;
-  streak=0; maxStreak=0; feverTimer=0; feverCount=0; score=0; scoreP2=0;
+  streak=0; maxStreak=0; feverTimer=0; feverCount=0; score=0;
+  streak2=0; maxStreak2=0; feverTimer2=0; feverCount2=0; scoreP2=0;
   musicStep=0; nextBeat=0;
   initAudio(); playSound('go');
   eatFlash=0; poopFlash=0;
@@ -372,11 +374,13 @@ function updateGame(dt) {
 
   if (feverTimer>0) {
     feverTimer=Math.max(0,feverTimer-dt);
-    if (feverTimer<=0) {
-      document.getElementById('fever-overlay').className='';
-      spawnText(canvas.width/2, canvas.height*0.45,'FEVER OVER','rgba(255,255,255,0.5)',18);
-    }
+    if (feverTimer<=0) spawnText(W*0.25, canvas.height*0.45,'FEVER OVER','rgba(255,255,255,0.5)',18);
   }
+  if (feverTimer2>0) {
+    feverTimer2=Math.max(0,feverTimer2-dt);
+    if (feverTimer2<=0) spawnText(W*0.75, canvas.height*0.45,'FEVER OVER','rgba(255,255,255,0.5)',18);
+  }
+  if (feverTimer<=0 && feverTimer2<=0) document.getElementById('fever-overlay').className='';
   if (eatFlash>0) eatFlash=Math.max(0,eatFlash-dt);
   if (poopFlash>0) poopFlash=Math.max(0,poopFlash-dt);
 
@@ -391,8 +395,10 @@ function updateGame(dt) {
     if (item.collected){ item.collectAnim+=dt; return item.collectAnim<0.18; }
     item.y+=diff.fallSpeed*dt;
     item.age+=dt;
-    if (feverTimer>0 && mouth.active) {
-      const dx=mouth.x-item.x, dy=mouth.y-item.y, dist=Math.hypot(dx,dy);
+    const activeM = item.x < W/2 ? mouth : mouth2;
+    const activeFever = item.x < W/2 ? feverTimer : feverTimer2;
+    if (activeFever>0 && activeM.active) {
+      const dx=activeM.x-item.x, dy=activeM.y-item.y, dist=Math.hypot(dx,dy);
       if (dist<FEVER_RADIUS && dist>1) {
         const dir=item.dead?-0.4:1;
         item.x+=(dx/dist)*FEVER_PULL*dt*dir;
@@ -419,38 +425,44 @@ function updateGame(dt) {
   });
 
   function collectItem(item, player) {
-    const multiplier = feverTimer>0 ? 2 : (streak>=STREAK_MULT_AT ? 1.5 : 1);
+    const ft = player===1 ? feverTimer : feverTimer2;
+    const sk = player===1 ? streak : streak2;
+    const multiplier = ft>0 ? 2 : (sk>=STREAK_MULT_AT ? 1.5 : 1);
+    const midX = player===1 ? W*0.25 : W*0.75;
+    const midY = canvas.height*0.42;
     if (item.dead) {
       if (player===1) { score=Math.max(0,score-4); streak=0; poopFlash=0.65; }
-      else            { scoreP2=Math.max(0,scoreP2-4); }
+      else            { scoreP2=Math.max(0,scoreP2-4); streak2=0; }
       playSound('poop');
       triggerShake();
       spawnPetals(item.x,item.y,'poop');
       spawnText(item.x,item.y-28,'-4 💩','#8B4A1E',24);
-      if (player===1) spawnText(item.x,item.y+18,'STREAK LOST','#FF4444',16);
+      spawnText(item.x,item.y+18,'STREAK LOST','#FF4444',16);
     } else {
       const earned=Math.round(BASE_PTS[item.key]*multiplier);
       if (player===1) {
         score+=earned; streak++;
         if (streak>maxStreak) maxStreak=streak;
         eatFlash=0.22;
-      } else { scoreP2+=earned; }
+      } else {
+        scoreP2+=earned; streak2++;
+        if (streak2>maxStreak2) maxStreak2=streak2;
+      }
       playSound(item.key==='rainbow' ? 'rainbow' : player===2 ? 'gobble2' : 'gobble');
       spawnPetals(item.x,item.y,item.key);
+      const curStreak = player===1 ? streak : streak2;
       const bonus=earned>BASE_PTS[item.key];
-      spawnText(item.x,item.y-28,`+${earned}${player===2?' P2':''}`,bonus?'#FEE52A':player===2?'#F83098':'#fff',bonus?26:22);
-      if (player===1) {
-        const W=canvas.width, midY=canvas.height*0.42;
-        if (streak===3) spawnText(W/2,midY,'🔥 3 IN A ROW!','#FFA500',20);
-        if (streak===5) spawnText(W/2,midY,'⚡ 5x — 1.5× SCORE!','#FF6600',22);
-        if (streak===6) spawnText(W/2,midY,'💥 ONE MORE!!','#FF0000',28);
-        if (streak>=STREAK_FEVER) {
-          streak=0; feverTimer=FEVER_DURATION; feverCount++;
-          playSound('fever');
-          document.getElementById('fever-overlay').className='active';
-          spawnText(W/2,midY-20,'🔥 GOBBLE FEVER 🔥','#FEE52A',32);
-          spawnText(W/2,midY+24,'2× + MAGNET','#FEE52A',18);
-        }
+      spawnText(item.x,item.y-28,`+${earned}`,bonus?'#FEE52A':player===2?'#F83098':'#fff',bonus?26:22);
+      if (curStreak===3) spawnText(midX,midY,'🔥 3 IN A ROW!','#FFA500',20);
+      if (curStreak===5) spawnText(midX,midY,'⚡ 5x — 1.5×!','#FF6600',22);
+      if (curStreak===6) spawnText(midX,midY,'💥 ONE MORE!!','#FF0000',28);
+      if (curStreak>=STREAK_FEVER) {
+        if (player===1) { streak=0; feverTimer=FEVER_DURATION; feverCount++; }
+        else            { streak2=0; feverTimer2=FEVER_DURATION; feverCount2++; }
+        playSound('fever');
+        document.getElementById('fever-overlay').className='active';
+        spawnText(midX,midY-20,'🔥 GOBBLE FEVER 🔥','#FEE52A',32);
+        spawnText(midX,midY+24,'2× + MAGNET','#FEE52A',18);
       }
     }
   }
@@ -694,23 +706,30 @@ function drawPlayerHUD(px, py, pw, ph, pr, sc, borderC, mouthRef) {
 function drawStreakBar() {
   const W=canvas.width, H=canvas.height;
   const dotR=6, gap=3, totalW=STREAK_FEVER*(dotR*2+gap)-gap;
-  const sx=(W-totalW)/2, y=H-24;
-  if (feverTimer>0) {
-    const barW=180, bx=(W-barW)/2, by=H-18;
-    ctx.fillStyle='rgba(254,229,42,0.15)'; ctx.fillRect(bx,by,barW,6);
-    ctx.fillStyle='#FEE52A'; ctx.fillRect(bx,by,(feverTimer/FEVER_DURATION)*barW,6);
-    return;
-  }
-  for(let i=0;i<STREAK_FEVER;i++){
-    const cx=sx+i*(dotR*2+gap)+dotR;
-    if (i<streak) {
-      ctx.fillStyle=i/STREAK_FEVER<0.4?'#1502FF':i/STREAK_FEVER<0.7?'#FF6600':'#FF2200';
-      ctx.beginPath(); ctx.arc(cx,y,dotR,0,Math.PI*2); ctx.fill();
-    } else {
-      ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.arc(cx,y,dotR,0,Math.PI*2); ctx.stroke();
+  const y=H-24;
+
+  function drawBar(startX, sk, ft, color) {
+    if (ft>0) {
+      const barW=totalW, bx=startX, by=H-18;
+      ctx.fillStyle='rgba(254,229,42,0.15)'; ctx.fillRect(bx,by,barW,6);
+      ctx.fillStyle='#FEE52A'; ctx.fillRect(bx,by,(ft/FEVER_DURATION)*barW,6);
+      return;
+    }
+    for(let i=0;i<STREAK_FEVER;i++){
+      const cx=startX+i*(dotR*2+gap)+dotR;
+      if (i<sk) {
+        ctx.fillStyle=i/STREAK_FEVER<0.4?color:i/STREAK_FEVER<0.7?'#FF6600':'#FF2200';
+        ctx.beginPath(); ctx.arc(cx,y,dotR,0,Math.PI*2); ctx.fill();
+      } else {
+        ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(cx,y,dotR,0,Math.PI*2); ctx.stroke();
+      }
     }
   }
+
+  const margin=20;
+  drawBar(margin, streak, feverTimer, '#1502FF');
+  drawBar(W-margin-totalW, streak2, feverTimer2, '#F83098');
 }
 
 function renderGame() {
@@ -722,7 +741,7 @@ function renderGame() {
   ctx.fillStyle='rgba(248,48,152,0.12)'; ctx.fillRect(0,H-4,W*prog,4);
   ctx.fillStyle=prog<0.25?'#FEE52A':'#F83098'; ctx.fillRect(0,H-4,W*prog,2);
 
-  if (feverTimer>0) {
+  if (feverTimer>0 || feverTimer2>0) {
     ctx.fillStyle=`rgba(254,229,42,${0.04+0.03*Math.sin(Date.now()/110)})`;
     ctx.fillRect(0,0,W,H);
   }
@@ -739,8 +758,10 @@ function renderGame() {
     ctx.save();
     ctx.globalAlpha=Math.max(0,alpha);
     ctx.translate(item.x,item.y); ctx.scale(scale,scale);
-    if (feverTimer>0&&!item.dead&&!item.collected&&mouth.active) {
-      const d=Math.hypot(mouth.x-item.x,mouth.y-item.y);
+    const itemM = item.x < W/2 ? mouth : mouth2;
+    const itemFever = item.x < W/2 ? feverTimer : feverTimer2;
+    if (itemFever>0&&!item.dead&&!item.collected&&itemM.active) {
+      const d=Math.hypot(itemM.x-item.x,itemM.y-item.y);
       if (d<FEVER_RADIUS) {
         ctx.strokeStyle='rgba(254,229,42,0.55)'; ctx.lineWidth=2;
         ctx.beginPath(); ctx.arc(0,0,ITEM_SIZE/2+6,0,Math.PI*2); ctx.stroke();
