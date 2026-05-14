@@ -274,6 +274,83 @@ function getDiff(elapsed, streak) {
   };
 }
 
+// ── Audio ─────────────────────────────────────────────────────────────────────
+let audioCtx = null, masterGain = null, musicGain = null;
+let musicStep = 0, nextBeat = 0;
+
+const MELODY = [262,330,392,330,262,196,220,262, 330,392,523,392,330,262,196,220];
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.8;
+  masterGain.connect(audioCtx.destination);
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.12;
+  musicGain.connect(masterGain);
+}
+
+let _lastSfxTime = 0;
+function sfx(freq, type, dur, vol=0.28, bend=null) {
+  if (!audioCtx || !masterGain || audioCtx.state !== 'running') return;
+  const now100 = Date.now();
+  if (now100 - _lastSfxTime < 40) return;
+  _lastSfxTime = now100;
+  const now = audioCtx.currentTime;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g); g.connect(masterGain);
+  o.type = type;
+  o.frequency.setValueAtTime(freq, now);
+  if (bend) o.frequency.exponentialRampToValueAtTime(bend, now + dur * 0.8);
+  g.gain.setValueAtTime(vol, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  o.start(now); o.stop(now + dur + 0.01);
+}
+
+function playSound(type) {
+  if (!audioCtx) return;
+  switch (type) {
+    case 'gobble':   sfx(440,'square',0.12,0.22,880); break;
+    case 'poop':     sfx(180,'sawtooth',0.22,0.18,70); break;
+    case 'rainbow':
+      [523,659,784,1047].forEach((f,i)=>setTimeout(()=>sfx(f,'square',0.1,0.18),i*50));
+      break;
+    case 'fever':
+      [262,330,392,523,659,784,1047].forEach((f,i)=>setTimeout(()=>sfx(f,'square',0.08,0.22),i*40));
+      break;
+    case 'go':
+      [523,659,784,1047,1318].forEach((f,i)=>setTimeout(()=>sfx(f,'square',0.1,0.2),i*45));
+      break;
+    case 'gameover':
+      [523,494,440,392,330,262].forEach((f,i)=>setTimeout(()=>sfx(f,'square',0.18,0.18),i*140));
+      break;
+  }
+}
+
+function tickMusic() {
+  if (!audioCtx || !gameActive) return;
+  const now = audioCtx.currentTime;
+  if (now < nextBeat) return;
+  const bpm = feverTimer > 0 ? 200 : 128;
+  const beat = 60 / bpm / 2;
+  const freq = MELODY[musicStep % MELODY.length];
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g); g.connect(musicGain);
+  o.type = 'square';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(1, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + beat * 0.75);
+  o.start(now); o.stop(now + beat);
+  musicStep++;
+  nextBeat = now + beat;
+}
+
+document.addEventListener('click', initAudio, { once: true });
+document.addEventListener('touchstart', initAudio, { once: true });
+
 // ── Game state ────────────────────────────────────────────────────────────────
 let gameActive=false, playerName='';
 let items=[], mouth={}, timeLeft, lastTime, spawnTimer;
@@ -286,6 +363,8 @@ function startGame() {
   timeLeft=GAME_TIME; lastTime=null; spawnTimer=0;
   streak=0; maxStreak=0; feverTimer=0; feverCount=0; score=0;
   eatFlash=0; poopFlash=0;
+  musicStep=0; nextBeat=0;
+  initAudio(); playSound('go');
   gameActive=true;
   document.getElementById('hud-timer').style.display='block';
   document.getElementById('fever-overlay').className='';
@@ -360,6 +439,7 @@ function updateGame(dt) {
     const multiplier = feverTimer>0 ? 2 : (streak>=STREAK_MULT_AT ? 1.5 : 1);
     if (item.dead) {
       score=Math.max(0,score-4); streak=0; poopFlash=0.65;
+      playSound('poop');
       triggerShake();
       spawnPetals(item.x,item.y,'poop');
       spawnText(item.x,item.y-28,'-4 💩','#8B4A1E',24);
@@ -369,6 +449,7 @@ function updateGame(dt) {
       score+=earned; streak++;
       if (streak>maxStreak) maxStreak=streak;
       eatFlash=0.22;
+      playSound(item.key==='rainbow' ? 'rainbow' : 'gobble');
       spawnPetals(item.x,item.y,item.key);
       const bonus=earned>BASE_PTS[item.key];
       spawnText(item.x,item.y-28,`+${earned}`,bonus?'#FEE52A':'#fff',bonus?26:22);
@@ -378,6 +459,7 @@ function updateGame(dt) {
       if (streak===6) spawnText(W/2,midY,'💥 ONE MORE!!','#FF0000',28);
       if (streak>=STREAK_FEVER) {
         streak=0; feverTimer=FEVER_DURATION; feverCount++;
+        playSound('fever');
         document.getElementById('fever-overlay').className='active';
         spawnText(W/2,midY-20,'🔥 GOBBLE FEVER 🔥','#FEE52A',32);
         spawnText(W/2,midY+24,'2× + MAGNET','#FEE52A',18);
@@ -399,6 +481,7 @@ function spawnItem(diff) {
 
 // ── End game ──────────────────────────────────────────────────────────────────
 function endGame() {
+  playSound('gameover');
   const {rank,ts} = saveScore(playerName,score);
   const allScores = getScores();
   const myScores = allScores.filter(s=>s.name===(playerName||'ANON').toUpperCase().trim().slice(0,12)||'ANON');
@@ -732,14 +815,17 @@ function loop(ts) {
   }
 
   if (!lastTime) lastTime = ts;
-  updateGame(Math.min((ts - lastTime) / 1000, 0.05));
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
+  tickMusic();
+  updateGame(dt);
   render();
   requestAnimationFrame(loop);
 }
 
 // ── Async end game (API save + leaderboard) ───────────────────────────────────
 window._endGameAsync = async function() {
+  playSound('gameover');
   const result = await apiSaveScore(playerName, score);
   const { rank, scores } = result;
 
