@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+@page { size: A5 portrait; margin: 0; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  width:100%; min-height:100vh;
+  background:#c8c2bb;
+  display:flex; flex-direction:column; justify-content:flex-start; align-items:center;
+  padding:20px;
+  gap:16px;
+  font-family:'Space Grotesk','Helvetica Neue',Arial,sans-serif;
+}
+
+#card {
+  width:148mm; height:210mm;
+  background:#FBF7EE;
+  overflow:hidden; position:relative;
+  flex-shrink:0;
+  transform-origin: top center;
+}
+
+/* dot grid */
+.dots {
+  position:absolute; inset:0;
+  background-image: radial-gradient(circle, rgba(10,10,10,0.07) 1.2px, transparent 1.2px);
+  background-size: 5mm 5mm;
+}
+
+/* pixel flowers */
+.pf { position:absolute; image-rendering:pixelated; image-rendering:crisp-edges; z-index:1; }
+
+/* ── Content layer ── */
+.content {
+  position:absolute; inset:0;
+  padding:13mm 14mm 13mm 14mm;
+  display:flex; flex-direction:column;
+  justify-content:space-between;
+  z-index:10;
+}
+
+/* top row */
+.top-row {
+  display:flex; justify-content:space-between; align-items:flex-start;
+}
+.logo-wrap {
+  width:11mm; height:11mm; background:#FBF7EE;
+  border:0.5mm solid #0A0A0A; border-radius:1.5mm;
+  box-shadow: 0.8mm 0.8mm 0 #1502FF;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.tio-logo { width:8mm; height:auto; display:block; }
+
+.badge {
+  font-size:8pt; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  color:#FBF7EE; background:#0A0A0A;
+  padding:1.8mm 4mm;
+  border:0.4mm solid #0A0A0A;
+}
+
+/* headline */
+.headline { }
+.headline .eyebrow {
+  font-size:8pt; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+  color:rgba(10,10,10,0.4); margin-bottom:1.5mm;
+}
+.headline .pink {
+  font-family:'Instrument Serif',serif;
+  font-style:italic; font-weight:400;
+  font-size:62pt; color:#F83098;
+  letter-spacing:-0.04em; line-height:0.88;
+  display:block; margin-bottom:0;
+}
+.headline .blue {
+  display:inline-block;
+  font-size:44pt; font-weight:800; color:#FBF7EE;
+  background:#1502FF; letter-spacing:-0.03em; line-height:0.88;
+  padding:0.04em 0.14em;
+  border:0.5mm solid #0A0A0A;
+  box-shadow: 1.2mm 1.2mm 0 #0A0A0A;
+}
+
+/* description */
+.desc {
+  font-size:10pt; font-weight:500; color:#0A0A0A;
+  line-height:1.45; letter-spacing:-0.01em;
+  max-width:80mm;
+}
+.desc strong { font-weight:800; }
+
+/* QR block */
+.qr-block {
+  display:flex; flex-direction:row; align-items:center; gap:6mm;
+}
+.qr-wrap {
+  width:28mm; height:28mm; flex-shrink:0;
+  background:#fff;
+  border:0.5mm solid #0A0A0A;
+  box-shadow: 1mm 1mm 0 #0A0A0A;
+  display:flex; align-items:center; justify-content:center;
+}
+#qr-canvas canvas, #qr-canvas img {
+  width:24mm !important; height:24mm !important;
+  image-rendering:pixelated;
+}
+.qr-info { display:flex; flex-direction:column; gap:2mm; }
+.qr-url {
+  font-size:15pt; font-weight:800; color:#1502FF;
+  letter-spacing:-0.03em; line-height:1;
+}
+.qr-sub {
+  font-size:8pt; color:rgba(10,10,10,0.45); letter-spacing:0.04em; text-transform:uppercase;
+  font-weight:600;
+}
+
+/* made by */
+.made-by {
+  font-size:7pt; color:rgba(10,10,10,0.3); letter-spacing:0.04em; text-transform:uppercase;
+  text-align:right; font-weight:600;
+}
+
+/* print buttons */
+.btns {
+  display:flex; gap:10px;
+}
+@media print {
+  html, body { background:transparent; padding:0; gap:0; }
+  .btns { display:none; }
+  #card { transform:none !important; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="card">
+  <div class="dots"></div>
+
+  <!-- ── Flowers ── -->
+
+  <!-- large yellow flower, top-right -->
+  <svg class="pf" style="right:-8mm;top:-6mm;width:68mm;height:68mm;opacity:0.5;" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="55" y="0"  width="10" height="15" fill="#FEE52A"/>
+    <rect x="80" y="5"  width="10" height="10" fill="#FEE52A"/>
+    <rect x="100" y="20" width="10" height="10" fill="#FEE52A"/>
+    <rect x="105" y="45" width="15" height="10" fill="#FEE52A"/>
+    <rect x="100" y="65" width="10" height="10" fill="#FEE52A"/>
+    <rect x="80" y="85" width="10" height="10" fill="#FEE52A"/>
+    <rect x="55" y="100" width="10" height="15" fill="#FEE52A"/>
+    <rect x="30" y="85" width="10" height="10" fill="#FEE52A"/>
+    <rect x="10" y="65" width="10" height="10" fill="#FEE52A"/>
+    <rect x="5"  y="45" width="15" height="10" fill="#FEE52A"/>
+    <rect x="10" y="20" width="10" height="10" fill="#FEE52A"/>
+    <rect x="30" y="5"  width="10" height="10" fill="#FEE52A"/>
+    <rect x="35" y="25" width="50" height="60" fill="#F83098"/>
+    <rect x="25" y="35" width="70" height="40" fill="#F83098"/>
+    <rect x="40" y="30" width="40" height="50" fill="#0A0A0A"/>
+    <rect x="30" y="40" width="60" height="30" fill="#0A0A0A"/>
+    <rect x="45" y="40" width="10" height="10" fill="#FEE52A"/>
+    <rect x="60" y="40" width="10" height="10" fill="#FEE52A"/>
+    <rect x="50" y="50" width="20" height="10" fill="#FEE52A"/>
+  </svg>
+
+  <!-- pink daisy, bottom-right -->
+  <svg class="pf" style="right:-4mm;bottom:-4mm;width:52mm;height:62mm;opacity:0.6;" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="11" y="0" width="2" height="3" fill="#F83098"/>
+    <rect x="14" y="1" width="3" height="2" fill="#F83098"/>
+    <rect x="18" y="5" width="3" height="2" fill="#F83098"/>
+    <rect x="11" y="12" width="2" height="3" fill="#F83098"/>
+    <rect x="3"  y="5" width="3" height="2" fill="#F83098"/>
+    <rect x="6"  y="1" width="3" height="2" fill="#F83098"/>
+    <rect x="9" y="4" width="6" height="7" fill="#FEE52A"/>
+    <rect x="8" y="5" width="8" height="5" fill="#FEE52A"/>
+    <rect x="10" y="5" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="13" y="5" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="11" y="9" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="11" y="15" width="2" height="6" fill="#2d6a2d"/>
+    <rect x="7"  y="17" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="9"  y="21" width="6" height="2" fill="#2d6a2d"/>
+  </svg>
+
+  <!-- small yellow flower, bottom-left -->
+  <svg class="pf" style="left:-3mm;bottom:20mm;width:28mm;height:28mm;opacity:0.55;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="11" y="0" width="2" height="3" fill="#FEE52A"/>
+    <rect x="16" y="1" width="2" height="2" fill="#FEE52A"/>
+    <rect x="20" y="4" width="2" height="2" fill="#FEE52A"/>
+    <rect x="20" y="8" width="3" height="2" fill="#FEE52A"/>
+    <rect x="19" y="12" width="2" height="2" fill="#FEE52A"/>
+    <rect x="15" y="16" width="2" height="2" fill="#FEE52A"/>
+    <rect x="11" y="19" width="2" height="3" fill="#FEE52A"/>
+    <rect x="6" y="16" width="2" height="2" fill="#FEE52A"/>
+    <rect x="3" y="12" width="2" height="2" fill="#FEE52A"/>
+    <rect x="1" y="8" width="3" height="2" fill="#FEE52A"/>
+    <rect x="2" y="4" width="2" height="2" fill="#FEE52A"/>
+    <rect x="6" y="1" width="2" height="2" fill="#FEE52A"/>
+    <rect x="7" y="5" width="10" height="12" fill="#F83098"/>
+    <rect x="5" y="7" width="14" height="8" fill="#F83098"/>
+    <rect x="8" y="6" width="8" height="10" fill="#0A0A0A"/>
+    <rect x="6" y="8" width="12" height="6" fill="#0A0A0A"/>
+    <rect x="9" y="8" width="2" height="2" fill="#FEE52A"/>
+    <rect x="12" y="8" width="2" height="2" fill="#FEE52A"/>
+    <rect x="10" y="10" width="4" height="2" fill="#FEE52A"/>
+  </svg>
+
+  <!-- tiny pink daisy, mid-left -->
+  <svg class="pf" style="left:-2mm;top:95mm;width:20mm;height:24mm;opacity:0.45;" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="11" y="0" width="2" height="3" fill="#F83098"/>
+    <rect x="14" y="1" width="3" height="2" fill="#F83098"/>
+    <rect x="18" y="5" width="3" height="2" fill="#F83098"/>
+    <rect x="11" y="12" width="2" height="3" fill="#F83098"/>
+    <rect x="3"  y="5" width="3" height="2" fill="#F83098"/>
+    <rect x="6"  y="1" width="3" height="2" fill="#F83098"/>
+    <rect x="9" y="4" width="6" height="7" fill="#FEE52A"/>
+    <rect x="8" y="5" width="8" height="5" fill="#FEE52A"/>
+    <rect x="10" y="5" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="13" y="5" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="11" y="9" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="11" y="15" width="2" height="6" fill="#2d6a2d"/>
+    <rect x="7"  y="17" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="9"  y="21" width="6" height="2" fill="#2d6a2d"/>
+  </svg>
+
+  <!-- ── Content ── -->
+  <div class="content">
+    <div class="top-row">
+      <div class="logo-wrap">
+        <img class="tio-logo" src="images/logo-blue.svg" alt="tio.ist">
+      </div>
+      <div class="badge">Free · Weekly</div>
+    </div>
+
+    <div class="headline">
+      <div class="eyebrow">tio.ist newsletter</div>
+      <span class="pink">stay</span>
+      <span class="blue">sharp.</span>
+    </div>
+
+    <div class="desc">
+      Tech stories, tools, and ideas — curated every week from <strong>Kadıköy, Istanbul.</strong><br><br>
+      No hype. No filler. Just the stuff worth reading.
+    </div>
+
+    <div class="qr-block">
+      <div class="qr-wrap">
+        <div id="qr-canvas"></div>
+      </div>
+      <div class="qr-info">
+        <div class="qr-url">tio.ist/<wbr>newsletter</div>
+        <div class="qr-sub">scan to subscribe<br>no account needed</div>
+      </div>
+    </div>
+
+    <div class="made-by">tio.ist · kadıköy, istanbul</div>
+  </div>
+</div>
+
+<div class="btns">
+  <button onclick="window.print()" style="background:#0A0A0A;color:#FEE52A;border:none;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;border-radius:6px;letter-spacing:.05em;text-transform:uppercase;font-family:inherit;">Print / Save PDF</button>
+  <button onclick="saveJpeg()" style="background:#1502FF;color:#fff;border:none;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;border-radius:6px;letter-spacing:.05em;text-transform:uppercase;font-family:inherit;">Save JPEG</button>
+</div>
+
+<script>
+// Generate QR code
+new QRCode(document.getElementById('qr-canvas'), {
+  text: 'https://tio.ist/newsletter',
+  width: 91,
+  height: 91,
+  colorDark: '#0A0A0A',
+  colorLight: '#ffffff',
+  correctLevel: QRCode.CorrectLevel.M
+});
+
+// Scale for screen
+function scaleCard() {
+  const card = document.getElementById('card');
+  const vw = window.innerWidth - 40;
+  const mmToPx = 96 / 25.4;
+  const cardW = 148 * mmToPx;
+  const scale = Math.min(1, vw / cardW);
+  card.style.transform = scale < 1 ? `scale(${scale})` : '';
+  card.style.transformOrigin = 'top center';
+  document.body.style.minHeight = (210 * mmToPx * scale + 80) + 'px';
+}
+scaleCard();
+window.addEventListener('resize', scaleCard);
+
+// High-res JPEG export
+function saveJpeg() {
+  const card = document.getElementById('card');
+  const mmToPx = 96 / 25.4;
+  const w = Math.round(148 * mmToPx);
+  const h = Math.round(210 * mmToPx);
+  card.style.transform = 'none';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    htmlToImage.toJpeg(card, {
+      quality: 0.98, width: w, height: h, pixelRatio: 3, backgroundColor: '#FBF7EE'
+    }).then(url => {
+      const a = document.createElement('a');
+      a.download = 'tio-newsletter-poster.jpg';
+      a.href = url;
+      a.click();
+      scaleCard();
+    }).catch(() => scaleCard());
+  }));
+}
+</script>
+</body>
+</html>
