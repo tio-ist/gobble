@@ -524,79 +524,72 @@ function rrect(x,y,w,h,r){
   ctx.closePath();
 }
 
-// Draw cute pixel-art character (blocky kawaii style)
+// Draw cute pixel-art character
 function drawPixelChar(cx, cy, size, active, color) {
-  const u = Math.round(size / 18);
+  const u = Math.max(2, Math.round(size / 14));
   const t = Date.now() / 1000;
-  const by = active ? Math.sin(t * 3.8) * u : Math.sin(t * 1.3) * u * 0.4;
-  const blush = color === '#FEE52A' ? '#E8941A' : '#FF6BAE';
-  const dark = 'rgba(10,10,10,0.9)';
-  const dim  = 'rgba(255,255,255,0.0)';
+  const by = active ? Math.sin(t * 4) * u : Math.sin(t * 1.4) * u * 0.3;
+  const D = 'rgba(10,10,10,0.92)';
+  const C = active ? color : 'rgba(255,255,255,0.2)';
+  const blush = color === '#FEE52A' ? '#D4780A' : '#FF4DA6';
 
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(cy + by));
   ctx.imageSmoothingEnabled = false;
-  ctx.globalAlpha = active ? 1 : 0.42;
+  ctx.globalAlpha = active ? 1 : 0.4;
 
-  function px(x, y, w, h, c) {
-    if (!c || c === dim) return;
-    ctx.fillStyle = c;
-    ctx.fillRect(x*u, y*u, w*u, h*u);
+  function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x*u,y*u,w*u,h*u); }
+
+  // Shadow
+  px(-5,8,10,1,'rgba(0,0,0,0.15)');
+
+  // Legs
+  px(-4,5,3,3,D); px(-3,6,2,2,C);
+  px( 2,5,3,3,D); px( 3,6,2,2,C);
+
+  // Arms — raised when active
+  const ay = active ? -1 : 0;
+  px(-8,ay,  4,3,D); px(-7,ay+1,3,2,C);
+  px( 5,ay,  4,3,D); px( 6,ay+1,3,2,C);
+
+  // Body (wide & squat — 14×10)
+  px(-7,-5,14,10,D);
+  px(-6,-4,12, 8,C);
+
+  // Shine highlight (top-left corner)
+  if (active) {
+    px(-5,-3,3,1,'rgba(255,255,255,0.6)');
+    px(-5,-2,1,1,'rgba(255,255,255,0.6)');
   }
 
-  const C = active ? color : 'rgba(255,255,255,0.22)';
-
-  // ── Shadow ──
-  px(-6, 10, 12, 1, 'rgba(0,0,0,0.18)');
-
-  // ── Legs ──
-  px(-5, 7, 3, 3, dark); px(-4, 8, 2, 2, C);
-  px( 2, 7, 3, 3, dark); px( 3, 8, 2, 2, C);
-
-  // ── Arms (raised slightly when active) ──
-  const armY = active ? -1 : 0;
-  px(-9, armY,   4, 3, dark); px(-8, armY+1, 3, 2, C);
-  px( 6, armY,   4, 3, dark); px( 7, armY+1, 3, 2, C);
-
-  // ── Body outline + fill ──
-  px(-7, -6, 14, 13, dark);
-  px(-6, -5, 12, 11, C);
-
-  // ── Highlight (top-left shine) ──
-  const hi = active ? 'rgba(255,255,255,0.55)' : null;
-  px(-5, -4, 4, 1, hi);
-  px(-5, -3, 1, 2, hi);
-
-  // ── Face ──
+  // Face
   if (active) {
-    // Angled happy eyes  \  /  with white pixel highlight
-    px(-4, -2, 1, 2, dark); px(-3, -1, 1, 1, dark); // left eye
-    px( 2, -2, 1, 2, dark); px( 3, -1, 1, 1, dark); // right eye
-    px(-4, -2, 1, 1, '#fff');  // left highlight
-    px( 2, -2, 1, 1, '#fff');  // right highlight
-    // Blush pixels
-    ctx.globalAlpha = 0.55;
-    px(-6, 0, 2, 1, blush);
-    px( 5, 0, 2, 1, blush);
+    // 2×2 kawaii eyes with 1×1 white highlight
+    px(-4,-2,2,2,D); px(-4,-2,1,1,'#fff');
+    px( 3,-2,2,2,D); px( 3,-2,1,1,'#fff');
+    // Blush (2×1 pixels on each cheek)
+    ctx.globalAlpha = 0.6;
+    px(-6,0,2,1,blush);
+    px( 5,0,2,1,blush);
     ctx.globalAlpha = 1;
-    // Smile: bottom bar + corners
-    px(-2, 3, 5, 1, dark);
-    px(-3, 2, 1, 1, dark);
-    px( 3, 2, 1, 1, dark);
+    // U-shaped pixel smile
+    px(-3,1,1,1,D); px(3,1,1,1,D);  // corners
+    px(-3,2,1,1,D); px(3,2,1,1,D);
+    px(-2,3,5,1,D);                  // bottom
   } else {
-    // Sleepy horizontal eyes  —  —
-    px(-4, -1, 3, 1, dark);
-    px( 2, -1, 3, 1, dark);
-    // Neutral mouth dot
-    px(-1, 3, 2, 1, dark);
-    // Floating zzz
-    const zp = (t * 0.7) % 1;
-    ctx.font = `900 ${Math.max(8, u*2)}px monospace`;
-    ctx.fillStyle = 'rgba(255,255,255,0.28)';
-    ctx.globalAlpha = 0.42 * Math.sin(zp * Math.PI);
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText('z', 8*u, (-7 - zp*3)*u);
-    ctx.globalAlpha = 0.42;
+    // Sleepy flat eyes (— —)
+    px(-4,-1,3,1,D);
+    px( 2,-1,3,1,D);
+    // Small neutral mouth
+    px(-1,2,3,1,D);
+    // Floating z
+    const zp=(t*0.65)%1;
+    ctx.font=`900 ${u*2}px monospace`;
+    ctx.fillStyle='rgba(255,255,255,0.32)';
+    ctx.globalAlpha=0.4*Math.sin(zp*Math.PI);
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText('z',7*u,(-8-zp*3)*u);
+    ctx.globalAlpha=0.4;
   }
 
   ctx.restore();
@@ -637,7 +630,7 @@ function renderWait(faceCount, stableMs) {
   }
 
   // Characters — size relative to zone width
-  const charSize = Math.min(W * 0.22, H * 0.38);
+  const charSize = Math.min(W * 0.13, H * 0.22);
   const charCY = H * 0.5;
   drawPixelChar(W * 0.25, charCY, charSize, p1Active, '#FEE52A');
   drawPixelChar(W * 0.75, charCY, charSize, p2Active, '#F83098');
