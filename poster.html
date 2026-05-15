@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GOBBLE — Print Poster</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&family=Inter:wght@400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 210mm;
+    height: 297mm;
+    background: #fff;
+  }
+
+  .poster {
+    width: 210mm;
+    height: 297mm;
+    background: #FFFDF5;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Space Grotesk', Arial, sans-serif;
+  }
+
+  /* ── Background dots ── */
+  .poster::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, #1502FF18 1.5px, transparent 1.5px);
+    background-size: 18px 18px;
+    z-index: 0;
+  }
+
+  /* ── Corner flowers SVG ── */
+  .flowers-top {
+    position: absolute;
+    top: 0; left: 0;
+    width: 210mm;
+    height: 88mm;
+    z-index: 1;
+  }
+  .flowers-bottom {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 210mm;
+    height: 72mm;
+    z-index: 1;
+  }
+
+  /* ── Content ── */
+  .content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 14mm;
+  }
+
+  .top-spacer { height: 54mm; }
+
+  /* tio badge */
+  .tio-badge {
+    font-family: 'Inter', sans-serif;
+    font-size: 11pt;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: #1502FF;
+    text-transform: uppercase;
+    margin-bottom: 3mm;
+    border: 1.5px solid #1502FF;
+    padding: 2px 10px;
+    border-radius: 20px;
+  }
+
+  /* GOBBLE title */
+  .title {
+    font-size: 72pt;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-align: center;
+    background: linear-gradient(135deg, #1502FF 0%, #F83098 55%, #FEE52A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 3mm;
+  }
+
+  /* Fruit strip */
+  .fruits {
+    font-size: 28pt;
+    letter-spacing: 0.12em;
+    margin-bottom: 5mm;
+  }
+
+  /* Tagline */
+  .tagline {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #111;
+    text-align: center;
+    line-height: 1.35;
+    margin-bottom: 2mm;
+  }
+  .tagline span {
+    color: #F83098;
+  }
+
+  .sub-tagline {
+    font-family: 'Inter', sans-serif;
+    font-size: 10pt;
+    color: #555;
+    text-align: center;
+    margin-bottom: 8mm;
+    letter-spacing: 0.04em;
+  }
+
+  /* QR + URL block */
+  .qr-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    border: 3px solid #1502FF;
+    border-radius: 6mm;
+    padding: 5mm 8mm 4mm;
+    margin-bottom: 6mm;
+    box-shadow: 4px 4px 0 #F83098;
+  }
+
+  .qr-block img {
+    width: 38mm;
+    height: 38mm;
+    image-rendering: pixelated;
+    display: block;
+    margin-bottom: 3mm;
+  }
+
+  .url {
+    font-size: 15pt;
+    font-weight: 900;
+    color: #1502FF;
+    letter-spacing: 0.01em;
+  }
+
+  /* How to play */
+  .how {
+    background: #1502FF;
+    color: #fff;
+    border-radius: 4mm;
+    padding: 4mm 7mm;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 5mm;
+  }
+  .how-title {
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 2mm;
+  }
+  .how-steps {
+    font-size: 10pt;
+    font-weight: 600;
+    line-height: 1.7;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Bottom spacer for flowers */
+  .bottom-spacer { height: 30mm; }
+
+  @media print {
+    html, body { margin: 0; padding: 0; }
+    .poster { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+
+  <!-- ── Top flowers ── -->
+  <svg class="flowers-top" viewBox="0 0 794 332" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Reusable cherry blossom petal -->
+      <path id="petal" d="M0,-18 C5,-14 7,-6 0,0 C-7,-6 -5,-14 0,-18Z"/>
+    </defs>
+
+    <!-- LEFT CLUSTER -->
+    <!-- Main bloom 1 -->
+    <g transform="translate(62,78)">
+      <g transform="rotate(0)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(72)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(144)"><use href="#petal" fill="#F83098" opacity=".7"/></g>
+      <g transform="rotate(216)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(288)"><use href="#petal" fill="#F9C9DC"/></g>
+      <circle r="5" fill="#FEE52A"/>
+      <circle r="2" fill="#F83098"/>
+    </g>
+
+    <!-- Main bloom 2 -->
+    <g transform="translate(118,42)">
+      <g transform="rotate(20)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
+      <g transform="rotate(92)"><use href="#petal" fill="#F83098" opacity=".6" transform="scale(0.85)"/></g>
+      <g transform="rotate(164)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
+      <g transform="rotate(236)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
+      <g transform="rotate(308)"><use href="#petal" fill="#F9C9DC" transform="scale(0.85)"/></g>
+      <circle r="4" fill="#FEE52A"/>
+    </g>
+
+    <!-- Small bloom 3 -->
+    <g transform="translate(24,38)">
+      <g transform="rotate(10)"><use href="#petal" fill="#F83098" opacity=".5" transform="scale(0.65)"/></g>
+      <g transform="rotate(82)"><use href="#petal" fill="#FADADD" transform="scale(0.65)"/></g>
+      <g transform="rotate(154)"><use href="#petal" fill="#FADADD" transform="scale(0.65)"/></g>
+      <g transform="rotate(226)"><use href="#petal" fill="#FADADD" transform="scale(0.65)"/></g>
+      <g transform="rotate(298)"><use href="#petal" fill="#F9C9DC" transform="scale(0.65)"/></g>
+      <circle r="3" fill="#FEE52A"/>
+    </g>
+
+    <!-- Branch lines left -->
+    <path d="M0,120 Q30,80 62,78" stroke="#6B3D2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M30,95 Q70,55 118,42" stroke="#6B3D2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M15,108 Q18,60 24,38" stroke="#6B3D2E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Loose petals left -->
+    <g transform="translate(155,60) rotate(35)"><use href="#petal" fill="#F9C9DC" transform="scale(0.5)"/></g>
+    <g transform="translate(85,110) rotate(-20)"><use href="#petal" fill="#F83098" opacity=".4" transform="scale(0.4)"/></g>
+    <g transform="translate(170,95) rotate(60)"><use href="#petal" fill="#FADADD" transform="scale(0.45)"/></g>
+
+    <!-- RIGHT CLUSTER -->
+    <g transform="translate(732,68)">
+      <g transform="rotate(15)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(87)"><use href="#petal" fill="#F83098" opacity=".65"/></g>
+      <g transform="rotate(159)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(231)"><use href="#petal" fill="#FADADD"/></g>
+      <g transform="rotate(303)"><use href="#petal" fill="#F9C9DC"/></g>
+      <circle r="5" fill="#FEE52A"/>
+      <circle r="2" fill="#F83098"/>
+    </g>
+
+    <g transform="translate(680,38)">
+      <g transform="rotate(-10)"><use href="#petal" fill="#FADADD" transform="scale(0.8)"/></g>
+      <g transform="rotate(62)"><use href="#petal" fill="#F83098" opacity=".55" transform="scale(0.8)"/></g>
+      <g transform="rotate(134)"><use href="#petal" fill="#FADADD" transform="scale(0.8)"/></g>
+      <g transform="rotate(206)"><use href="#petal" fill="#F9C9DC" transform="scale(0.8)"/></g>
+      <g transform="rotate(278)"><use href="#petal" fill="#FADADD" transform="scale(0.8)"/></g>
+      <circle r="4" fill="#FEE52A"/>
+    </g>
+
+    <g transform="translate(770,36)">
+      <g transform="rotate(5)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
+      <g transform="rotate(77)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
+      <g transform="rotate(149)"><use href="#petal" fill="#F83098" opacity=".5" transform="scale(0.6)"/></g>
+      <g transform="rotate(221)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
+      <g transform="rotate(293)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
+      <circle r="3" fill="#FEE52A"/>
+    </g>
+
+    <!-- Branch lines right -->
+    <path d="M794,110 Q762,72 732,68" stroke="#6B3D2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M764,88 Q726,50 680,38" stroke="#6B3D2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M780,100 Q776,56 770,36" stroke="#6B3D2E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Loose petals right -->
+    <g transform="translate(640,72) rotate(-40)"><use href="#petal" fill="#F9C9DC" transform="scale(0.5)"/></g>
+    <g transform="translate(700,108) rotate(25)"><use href="#petal" fill="#F83098" opacity=".35" transform="scale(0.45)"/></g>
+    <g transform="translate(620,52) rotate(70)"><use href="#petal" fill="#FADADD" transform="scale(0.4)"/></g>
+
+    <!-- TOP CENTER bloom -->
+    <g transform="translate(397,22)">
+      <g transform="rotate(0)"><use href="#petal" fill="#F9C9DC" transform="scale(0.9)"/></g>
+      <g transform="rotate(72)"><use href="#petal" fill="#F83098" opacity=".6" transform="scale(0.9)"/></g>
+      <g transform="rotate(144)"><use href="#petal" fill="#FADADD" transform="scale(0.9)"/></g>
+      <g transform="rotate(216)"><use href="#petal" fill="#F9C9DC" transform="scale(0.9)"/></g>
+      <g transform="rotate(288)"><use href="#petal" fill="#FADADD" transform="scale(0.9)"/></g>
+      <circle r="4.5" fill="#FEE52A"/>
+      <circle r="2" fill="#F83098"/>
+    </g>
+
+    <!-- Scattered petals middle-top -->
+    <g transform="translate(300,50) rotate(15)"><use href="#petal" fill="#F9C9DC" transform="scale(0.42)"/></g>
+    <g transform="translate(490,42) rotate(-25)"><use href="#petal" fill="#FADADD" transform="scale(0.38)"/></g>
+    <g transform="translate(250,80) rotate(55)"><use href="#petal" fill="#F83098" opacity=".3" transform="scale(0.35)"/></g>
+    <g transform="translate(540,68) rotate(-45)"><use href="#petal" fill="#F9C9DC" transform="scale(0.4)"/></g>
+
+    <!-- Yellow accent dots scattered -->
+    <circle cx="145" cy="55" r="3" fill="#FEE52A"/>
+    <circle cx="648" cy="48" r="3" fill="#FEE52A"/>
+    <circle cx="200" cy="90" r="2" fill="#F83098" opacity=".5"/>
+    <circle cx="596" cy="84" r="2" fill="#F83098" opacity=".5"/>
+    <circle cx="350" cy="30" r="2.5" fill="#1502FF" opacity=".25"/>
+    <circle cx="444" cy="26" r="2" fill="#1502FF" opacity=".2"/>
+  </svg>
+
+  <!-- ── Bottom flowers ── -->
+  <svg class="flowers-bottom" viewBox="0 0 794 272" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <!-- LEFT -->
+    <g transform="translate(55,200)">
+      <g transform="rotate(5)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(77)"><use href="#petal" fill="#F83098" opacity=".6"/></g>
+      <g transform="rotate(149)"><use href="#petal" fill="#FADADD"/></g>
+      <g transform="rotate(221)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(293)"><use href="#petal" fill="#FADADD"/></g>
+      <circle r="5" fill="#FEE52A"/>
+    </g>
+    <g transform="translate(110,240)">
+      <g transform="rotate(-12)"><use href="#petal" fill="#FADADD" transform="scale(0.75)"/></g>
+      <g transform="rotate(60)"><use href="#petal" fill="#F83098" opacity=".55" transform="scale(0.75)"/></g>
+      <g transform="rotate(132)"><use href="#petal" fill="#F9C9DC" transform="scale(0.75)"/></g>
+      <g transform="rotate(204)"><use href="#petal" fill="#FADADD" transform="scale(0.75)"/></g>
+      <g transform="rotate(276)"><use href="#petal" fill="#F9C9DC" transform="scale(0.75)"/></g>
+      <circle r="3.5" fill="#FEE52A"/>
+    </g>
+    <g transform="translate(20,248)">
+      <g transform="rotate(18)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
+      <g transform="rotate(90)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
+      <g transform="rotate(162)"><use href="#petal" fill="#F83098" opacity=".45" transform="scale(0.6)"/></g>
+      <g transform="rotate(234)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
+      <g transform="rotate(306)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
+      <circle r="3" fill="#FEE52A"/>
+    </g>
+    <path d="M0,272 Q28,220 55,200" stroke="#6B3D2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M22,265 Q60,248 110,240" stroke="#6B3D2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M8,260 Q12,252 20,248" stroke="#6B3D2E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <!-- RIGHT -->
+    <g transform="translate(739,198)">
+      <g transform="rotate(-8)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(64)"><use href="#petal" fill="#F83098" opacity=".6"/></g>
+      <g transform="rotate(136)"><use href="#petal" fill="#FADADD"/></g>
+      <g transform="rotate(208)"><use href="#petal" fill="#F9C9DC"/></g>
+      <g transform="rotate(280)"><use href="#petal" fill="#FADADD"/></g>
+      <circle r="5" fill="#FEE52A"/>
+    </g>
+    <g transform="translate(682,238)">
+      <g transform="rotate(10)"><use href="#petal" fill="#FADADD" transform="scale(0.75)"/></g>
+      <g transform="rotate(82)"><use href="#petal" fill="#F83098" opacity=".55" transform="scale(0.75)"/></g>
+      <g transform="rotate(154)"><use href="#petal" fill="#F9C9DC" transform="scale(0.75)"/></g>
+      <g transform="rotate(226)"><use href="#petal" fill="#FADADD" transform="scale(0.75)"/></g>
+      <g transform="rotate(298)"><use href="#petal" fill="#F9C9DC" transform="scale(0.75)"/></g>
+      <circle r="3.5" fill="#FEE52A"/>
+    </g>
+    <g transform="translate(774,246)">
+      <g transform="rotate(-15)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
+      <g transform="rotate(57)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
+      <g transform="rotate(129)"><use href="#petal" fill="#F83098" opacity=".45" transform="scale(0.6)"/></g>
+      <g transform="rotate(201)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
+      <g transform="rotate(273)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
+      <circle r="3" fill="#FEE52A"/>
+    </g>
+    <path d="M794,272 Q766,218 739,198" stroke="#6B3D2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M772,263 Q730,246 682,238" stroke="#6B3D2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M786,258 Q782,250 774,246" stroke="#6B3D2E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <!-- CENTER BOTTOM -->
+    <g transform="translate(397,258)">
+      <g transform="rotate(0)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
+      <g transform="rotate(72)"><use href="#petal" fill="#F83098" opacity=".55" transform="scale(0.85)"/></g>
+      <g transform="rotate(144)"><use href="#petal" fill="#F9C9DC" transform="scale(0.85)"/></g>
+      <g transform="rotate(216)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
+      <g transform="rotate(288)"><use href="#petal" fill="#F9C9DC" transform="scale(0.85)"/></g>
+      <circle r="4" fill="#FEE52A"/>
+    </g>
+
+    <!-- Scattered petals -->
+    <g transform="translate(160,220) rotate(30)"><use href="#petal" fill="#F9C9DC" transform="scale(0.42)"/></g>
+    <g transform="translate(630,215) rotate(-20)"><use href="#petal" fill="#FADADD" transform="scale(0.45)"/></g>
+    <g transform="translate(290,252) rotate(55)"><use href="#petal" fill="#F83098" opacity=".3" transform="scale(0.38)"/></g>
+    <g transform="translate(505,248) rotate(-35)"><use href="#petal" fill="#F9C9DC" transform="scale(0.4)"/></g>
+
+    <circle cx="148" cy="210" r="3" fill="#FEE52A"/>
+    <circle cx="645" cy="206" r="3" fill="#FEE52A"/>
+    <circle cx="220" cy="240" r="2" fill="#F83098" opacity=".5"/>
+    <circle cx="573" cy="236" r="2" fill="#F83098" opacity=".5"/>
+  </svg>
+
+  <div class="content">
+    <div class="top-spacer"></div>
+
+    <div class="tio-badge">tio.ist presents</div>
+
+    <div class="title">GOBBLE</div>
+
+    <div class="fruits">🍓 🍇 🌸 🍎 🌟</div>
+
+    <div class="tagline">
+      Open your mouth.<br>
+      <span>Eat the fruits.</span><br>
+      Beat everyone.
+    </div>
+
+    <div class="sub-tagline">The face-tracking eating game — no hands required</div>
+
+    <div class="qr-block">
+      <img src="qr.jpg" alt="QR code for gobble.tio.ist">
+      <div class="url">gobble.tio.ist</div>
+    </div>
+
+    <div class="how">
+      <div class="how-title">How to play</div>
+      <div class="how-steps">
+        Open camera &nbsp;·&nbsp; Face the screen &nbsp;·&nbsp; Open your mouth to eat<br>
+        Solo mode or Duello — face a friend side by side
+      </div>
+    </div>
+
+    <div class="bottom-spacer"></div>
+  </div>
+
+</div>
+</body>
+</html>
