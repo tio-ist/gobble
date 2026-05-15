@@ -627,9 +627,9 @@ function render() {
   ctx.clearRect(0,0,W,H);
   if (!gameActive) return;
 
-  const prog=timeLeft/GAME_TIME;
+  const prog=(elapsed%60)/60;
   ctx.fillStyle='rgba(254,229,42,0.12)'; ctx.fillRect(0,H-4,W*prog,4);
-  ctx.fillStyle=prog<0.25?'#F83098':'#FEE52A'; ctx.fillRect(0,H-4,W*prog,2);
+  ctx.fillStyle='#1502FF'; ctx.fillRect(0,H-4,W*prog,2);
 
   if (feverTimer>0) {
     ctx.fillStyle=`rgba(254,229,42,${0.04+0.03*Math.sin(Date.now()/110)})`;
