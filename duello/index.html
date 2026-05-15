@@ -255,7 +255,7 @@ let musicStep = 0, nextBeat = 0;
 const MELODY = [262,330,392,330,262,196,220,262, 330,392,523,392,330,262,196,220];
 
 function initAudio() {
-  if (audioCtx) return;
+  if (audioCtx) { audioCtx.resume(); return; }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 0.8;
@@ -263,11 +263,14 @@ function initAudio() {
   musicGain = audioCtx.createGain();
   musicGain.gain.value = 0.12;
   musicGain.connect(masterGain);
+  audioCtx.resume();
 }
 
 let _lastSfxTime = 0;
 function sfx(freq, type, dur, vol=0.28, bend=null) {
-  if (!audioCtx || !masterGain || audioCtx.state !== 'running') return;
+  if (!audioCtx || !masterGain) return;
+  if (audioCtx.state === 'suspended') { audioCtx.resume(); return; }
+  if (audioCtx.state !== 'running') return;
   // Rate-limit to prevent audio graph overflow (max ~10 nodes/100ms)
   const now100 = Date.now();
   if (now100 - _lastSfxTime < 40) return;
@@ -307,7 +310,7 @@ function playSound(type) {
 }
 
 function tickMusic() {
-  if (!audioCtx || !gameActive) return;
+  if (!audioCtx || !gameActive || audioCtx.state !== 'running') return;
   const now = audioCtx.currentTime;
   if (now < nextBeat) return;
   const bpm = (feverTimer > 0 || feverTimer2 > 0) ? 200 : 128;
@@ -326,15 +329,15 @@ function tickMusic() {
 }
 
 // Initialise audio on first user gesture
-document.addEventListener('click', initAudio, { once: true });
-document.addEventListener('touchstart', initAudio, { once: true });
+document.addEventListener('click', initAudio);
+document.addEventListener('touchstart', initAudio);
 
 // ── Game state ────────────────────────────────────────────────────────────────
-let gameActive=false, gameEnding=false;
+let gameActive=false, gameEnding=false, survivePhase=false;
 let items=[], mouth={}, mouth2={}, timeLeft, lastTime, spawnTimer;
 let streak=0, maxStreak=0, feverTimer=0, feverCount=0, score=0;
 let streak2=0, maxStreak2=0, feverTimer2=0, feverCount2=0, scoreP2=0;
-let eatFlash=0, poopFlash=0;
+let eatFlash=0, poopFlash=0, missStreak=0, missStreak2=0;
 
 function startGame() {
   items=[]; particles=[]; floatingTexts=[];
@@ -343,6 +346,7 @@ function startGame() {
   timeLeft=GAME_TIME; lastTime=null; spawnTimer=0; _spawnSide=0;
   streak=0; maxStreak=0; feverTimer=0; feverCount=0; score=0;
   streak2=0; maxStreak2=0; feverTimer2=0; feverCount2=0; scoreP2=0;
+  missStreak=0; missStreak2=0; survivePhase=false;
   musicStep=0; nextBeat=0;
   initAudio(); playSound('go');
   eatFlash=0; poopFlash=0;
@@ -365,13 +369,12 @@ let lastCountTick = 0;      // timestamp of last second tick
 // ── Update (game) ─────────────────────────────────────────────────────────────
 function updateGame(dt) {
   timeLeft-=dt;
-  if (timeLeft<=0) {
-    timeLeft=0; gameActive=false;
-    document.getElementById('hud-timer').style.display='none';
-    document.getElementById('fever-overlay').className='';
-    gameEnding=true; setTimeout(endDuello, 700); return;
+  if (timeLeft<=0 && !survivePhase) {
+    survivePhase=true; missStreak=0; missStreak2=0;
+    document.getElementById('hud-timer').textContent='SURVIVE!';
+  } else if (!survivePhase) {
+    document.getElementById('hud-timer').textContent=Math.ceil(timeLeft)+'s';
   }
-  document.getElementById('hud-timer').textContent=Math.ceil(timeLeft)+'s';
 
   const elapsed=GAME_TIME-timeLeft;
   const diff=getDiff(elapsed,streak);
@@ -410,9 +413,34 @@ function updateGame(dt) {
       }
     }
     if (item.y>=H+item.sz) {
-      if (!item.dead && !item.collected && streak>0) {
-        streak=0;
-        spawnText(canvas.width/2, canvas.height*0.5,'MISSED — STREAK LOST','#FF4444',18);
+      if (!item.dead && !item.collected) {
+        const isP1 = item.x < W/2;
+        if (isP1) { streak=0; } else { streak2=0; }
+        if (survivePhase) {
+          if (isP1) {
+            missStreak++;
+            if (missStreak>=3) {
+              spawnText(W*0.25, canvas.height*0.4,'MISSED 3!','#FF2222',42);
+              gameActive=false;
+              document.getElementById('fever-overlay').className='';
+              gameEnding=true; setTimeout(endDuello, 700);
+            } else {
+              spawnText(W*0.25, canvas.height*0.5,`MISSED ${missStreak}/3`,'#FF4444',22);
+            }
+          } else {
+            missStreak2++;
+            if (missStreak2>=3) {
+              spawnText(W*0.75, canvas.height*0.4,'MISSED 3!','#FF2222',42);
+              gameActive=false;
+              document.getElementById('fever-overlay').className='';
+              gameEnding=true; setTimeout(endDuello, 700);
+            } else {
+              spawnText(W*0.75, canvas.height*0.5,`MISSED ${missStreak2}/3`,'#FF4444',22);
+            }
+          }
+        } else {
+          spawnText(isP1 ? W*0.25 : W*0.75, canvas.height*0.5,'MISSED — STREAK LOST','#FF4444',18);
+        }
       }
       return false;
     }
@@ -445,11 +473,11 @@ function updateGame(dt) {
     } else {
       const earned=Math.round(BASE_PTS[item.key]*multiplier);
       if (player===1) {
-        score+=earned; streak++;
+        score+=earned; streak++; missStreak=0;
         if (streak>maxStreak) maxStreak=streak;
         eatFlash=0.22;
       } else {
-        scoreP2+=earned; streak2++;
+        scoreP2+=earned; streak2++; missStreak2=0;
         if (streak2>maxStreak2) maxStreak2=streak2;
       }
       playSound(item.key==='rainbow' ? 'rainbow' : player===2 ? 'gobble2' : 'gobble');

@@ -286,7 +286,7 @@ let musicStep = 0, nextBeat = 0;
 const MELODY = [262,330,392,330,262,196,220,262, 330,392,523,392,330,262,196,220];
 
 function initAudio() {
-  if (audioCtx) return;
+  if (audioCtx) { audioCtx.resume(); return; }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 0.8;
@@ -294,11 +294,14 @@ function initAudio() {
   musicGain = audioCtx.createGain();
   musicGain.gain.value = 0.12;
   musicGain.connect(masterGain);
+  audioCtx.resume();
 }
 
 let _lastSfxTime = 0;
 function sfx(freq, type, dur, vol=0.28, bend=null) {
-  if (!audioCtx || !masterGain || audioCtx.state !== 'running') return;
+  if (!audioCtx || !masterGain) return;
+  if (audioCtx.state === 'suspended') { audioCtx.resume(); return; }
+  if (audioCtx.state !== 'running') return;
   const now100 = Date.now();
   if (now100 - _lastSfxTime < 40) return;
   _lastSfxTime = now100;
@@ -335,7 +338,7 @@ function playSound(type) {
 }
 
 function tickMusic() {
-  if (!audioCtx || !gameActive) return;
+  if (!audioCtx || !gameActive || audioCtx.state !== 'running') return;
   const now = audioCtx.currentTime;
   if (now < nextBeat) return;
   const bpm = feverTimer > 0 ? 200 : 128;
@@ -353,8 +356,8 @@ function tickMusic() {
   nextBeat = now + beat;
 }
 
-document.addEventListener('click', initAudio, { once: true });
-document.addEventListener('touchstart', initAudio, { once: true });
+document.addEventListener('click', initAudio);
+document.addEventListener('touchstart', initAudio);
 
 // ── Game state ────────────────────────────────────────────────────────────────
 let gameActive=false, playerName='';
