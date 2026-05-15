@@ -501,7 +501,7 @@ function endDuello() {
   showScreen('s-result');
   // Auto-restart after 30 seconds
   if (resultTimer) clearInterval(resultTimer);
-  let secs = 30;
+  let secs = 20;
   const cdEl = document.getElementById('r-countdown');
   cdEl.textContent = `(${secs}s)`;
   resultTimer = setInterval(() => {
