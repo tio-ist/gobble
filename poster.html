@@ -43,7 +43,14 @@ html, body {
   z-index:10;
 }
 .top-row { display:flex; justify-content:space-between; align-items:flex-start; }
-.tio-logo { width:72px; height:auto; display:block; }
+.logo-wrap {
+  width:64px; height:64px; background:#FBF7EE;
+  border:2px solid #0A0A0A; border-radius:10px;
+  box-shadow: 3px 3px 0 #1502FF;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.tio-logo { width:46px; height:auto; display:block; }
 .badge {
   font-size:13px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
   white-space:nowrap;
@@ -380,7 +387,7 @@ h1 .blue {
 
   <div class="content">
     <div class="top-row">
-      <img class="tio-logo" src="images/logo-blue.svg" alt="tio.ist">
+      <div class="logo-wrap"><img class="tio-logo" src="images/logo-blue.svg" alt="tio.ist"></div>
       <span class="badge">you're invited to play.</span>
     </div>
 
