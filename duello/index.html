@@ -236,10 +236,13 @@ const STREAK_MULT_AT = 5;
 
 function getDiff(elapsed, streak) {
   const t=Math.min(elapsed/38,1), sq=t*t;
+  // Endgame surge: last 15 seconds ramp from normal → chaos
+  const surge=Math.max(0, Math.min(1, (elapsed-30)/15));
+  const surgeSq=surge*surge;
   return {
-    maxItems:      Math.min(16, 4 + Math.floor(t*12)),
-    spawnInterval: Math.max(0.26, 1.45 - t*1.12),
-    fallSpeed:     90 + t*180 + sq*40 + streak*4,
+    maxItems:      Math.min(30, 4 + Math.floor(t*12) + Math.floor(surgeSq*16)),
+    spawnInterval: Math.max(0.08, 1.45 - t*1.12 - surgeSq*0.22),
+    fallSpeed:     90 + t*180 + sq*40 + streak*4 + surgeSq*160,
     deadChance:    Math.min(0.44, 0.07 + t*0.27 + Math.min(streak*0.032, 0.18)),
   };
 }

@@ -267,10 +267,14 @@ const STREAK_MULT_AT  = 5;
 function getDiff(elapsed, streak) {
   const t  = Math.min(elapsed/38, 1);
   const sq = t*t;
+  const surge=Math.max(0, Math.min(1, (elapsed-30)/15));
+  const surgeSq=surge*surge;
+  // After 45 s, keep creeping harder (endless mode)
+  const ultra=Math.max(0, (elapsed-45)/60);
   return {
-    maxItems:      Math.min(16, 4 + Math.floor(t*12)),
-    spawnInterval: Math.max(0.26, 1.45 - t*1.12),
-    fallSpeed:     90 + t*180 + sq*40 + streak*4,
+    maxItems:      Math.min(36, 4 + Math.floor(t*12) + Math.floor(surgeSq*16) + Math.floor(ultra*8)),
+    spawnInterval: Math.max(0.06, 1.45 - t*1.12 - surgeSq*0.22 - ultra*0.05),
+    fallSpeed:     90 + t*180 + sq*40 + streak*4 + surgeSq*160 + ultra*100,
     deadChance:    Math.min(0.44, 0.07 + t*0.27 + Math.min(streak*0.032, 0.18)),
   };
 }
@@ -354,16 +358,16 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
 // ── Game state ────────────────────────────────────────────────────────────────
 let gameActive=false, playerName='';
-let items=[], mouth={}, timeLeft, lastTime, spawnTimer;
+let items=[], mouth={}, lastTime, spawnTimer;
 let streak=0, maxStreak=0, feverTimer=0, feverCount=0, score=0;
-let eatFlash=0, poopFlash=0;
+let eatFlash=0, poopFlash=0, missStreak=0, elapsed=0;
 
 function startGame() {
   items=[]; particles=[]; floatingTexts=[];
   mouth={x:0,y:0,open:false,active:false};
-  timeLeft=GAME_TIME; lastTime=null; spawnTimer=0;
+  lastTime=null; spawnTimer=0; elapsed=0;
   streak=0; maxStreak=0; feverTimer=0; feverCount=0; score=0;
-  eatFlash=0; poopFlash=0;
+  eatFlash=0; poopFlash=0; missStreak=0;
   musicStep=0; nextBeat=0;
   initAudio(); playSound('go');
   gameActive=true;
@@ -373,16 +377,9 @@ function startGame() {
 
 // ── Update ────────────────────────────────────────────────────────────────────
 function updateGame(dt) {
-  timeLeft-=dt;
-  if (timeLeft<=0) {
-    timeLeft=0; gameActive=false;
-    document.getElementById('hud-timer').style.display='none';
-    document.getElementById('fever-overlay').className='';
-    setTimeout(()=>(window._endGameAsync||endGame)(),700); return;
-  }
-  document.getElementById('hud-timer').textContent=Math.ceil(timeLeft)+'s';
+  elapsed+=dt;
+  document.getElementById('hud-timer').textContent=Math.floor(elapsed)+'s';
 
-  const elapsed=GAME_TIME-timeLeft;
   const diff=getDiff(elapsed,streak);
 
   if (feverTimer>0) {
@@ -418,9 +415,19 @@ function updateGame(dt) {
       }
     }
     if (item.y>=H+item.sz) {
-      if (!item.dead && !item.collected && streak>0) {
-        streak=0;
-        spawnText(canvas.width/2, canvas.height*0.5,'MISSED — STREAK LOST','#FF4444',18);
+      if (!item.dead && !item.collected) {
+        streak=0; missStreak++;
+        const W2=canvas.width;
+        if (missStreak>=3) {
+          spawnText(W2/2, canvas.height*0.45,'GAME OVER!','#FF2222',42);
+          spawnText(W2/2, canvas.height*0.58,'3 missed in a row','#FF4444',20);
+          gameActive=false;
+          document.getElementById('hud-timer').style.display='none';
+          document.getElementById('fever-overlay').className='';
+          setTimeout(()=>(window._endGameAsync||endGame)(),900);
+        } else {
+          spawnText(W2/2, canvas.height*0.5,`MISSED ${missStreak}/3`,'#FF4444',20);
+        }
       }
       return false;
     }
@@ -447,7 +454,7 @@ function updateGame(dt) {
       spawnText(item.x,item.y+item.sz*0.4,'STREAK LOST 💩','#FF4444',18);
     } else {
       const earned=Math.round(BASE_PTS[item.key]*multiplier);
-      score+=earned; streak++;
+      score+=earned; streak++; missStreak=0;
       if (streak>maxStreak) maxStreak=streak;
       eatFlash=0.22;
       playSound(item.key==='rainbow' ? 'rainbow' : 'gobble');
