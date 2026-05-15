@@ -185,6 +185,7 @@ const GOOD_KEYS = ['blossom','daisy','strawberry','orange','grapes','rainbow'];
 const BASE_PTS  = { blossom:3, daisy:2, strawberry:2, orange:2, grapes:2, rainbow:5, poop:-4 };
 const PCOL      = { blossom:'#FF85AB', daisy:'#FEE52A', strawberry:'#E83232', orange:'#FFA500', grapes:'#B46FE0', rainbow:'#FEE52A', poop:'#8B4A1E' };
 const ITEM_SIZE = 52, COLLECT_R = 36;
+function uiScale() { return Math.max(1, Math.min(canvas.width/960, canvas.height/540)); }
 
 const spriteCache = {};
 function cacheSprites() {
@@ -251,7 +252,7 @@ function spawnPetals(x,y,key) {
 // ── Floating texts ────────────────────────────────────────────────────────────
 let floatingTexts = [];
 function spawnText(x,y,text,color='#fff',size=22) {
-  floatingTexts.push({x,y,text,color,size,life:0.75,maxLife:0.75,vy:-75});
+  floatingTexts.push({x,y,text,color,size:Math.round(size*uiScale()),life:0.75,maxLife:0.75,vy:-75*uiScale()});
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -416,7 +417,7 @@ function updateGame(dt) {
         item.y+=(dy/dist)*FEVER_PULL*dt*dir;
       }
     }
-    if (item.y>=H+ITEM_SIZE) {
+    if (item.y>=H+item.sz) {
       if (!item.dead && !item.collected && streak>0) {
         streak=0;
         spawnText(canvas.width/2, canvas.height*0.5,'MISSED — STREAK LOST','#FF4444',18);
@@ -429,7 +430,7 @@ function updateGame(dt) {
   // Collect
   items.forEach(item=>{
     if (item.collected) return;
-    if (mouth.active && mouth.open && Math.hypot(mouth.x-item.x,mouth.y-item.y)<COLLECT_R+ITEM_SIZE/2) {
+    if (mouth.active && mouth.open && Math.hypot(mouth.x-item.x,mouth.y-item.y)<COLLECT_R*uiScale()+item.sz/2) {
       item.collected=true; item.collectAnim=0;
       collectItem(item);
     }
@@ -442,8 +443,8 @@ function updateGame(dt) {
       playSound('poop');
       triggerShake();
       spawnPetals(item.x,item.y,'poop');
-      spawnText(item.x,item.y-28,'-4 💩','#8B4A1E',24);
-      spawnText(item.x,item.y+18,'STREAK LOST','#FF4444',16);
+      spawnText(item.x,item.y-item.sz*0.7,'-4 pts','#FF2222',36);
+      spawnText(item.x,item.y+item.sz*0.4,'STREAK LOST 💩','#FF4444',18);
     } else {
       const earned=Math.round(BASE_PTS[item.key]*multiplier);
       score+=earned; streak++;
@@ -452,7 +453,7 @@ function updateGame(dt) {
       playSound(item.key==='rainbow' ? 'rainbow' : 'gobble');
       spawnPetals(item.x,item.y,item.key);
       const bonus=earned>BASE_PTS[item.key];
-      spawnText(item.x,item.y-28,`+${earned}`,bonus?'#FEE52A':'#fff',bonus?26:22);
+      spawnText(item.x,item.y-item.sz*0.7,`+${earned}`,bonus?'#FEE52A':'#fff',bonus?28:24);
       const W=canvas.width, midY=canvas.height*0.42;
       if (streak===3) spawnText(W/2,midY,'🔥 3 IN A ROW!','#FFA500',20);
       if (streak===5) spawnText(W/2,midY,'⚡ 5x — 1.5× SCORE!','#FF6600',22);
@@ -476,7 +477,8 @@ function spawnItem(diff) {
   const isDead=Math.random()<diff.deadChance;
   let key = isDead ? 'poop' : GOOD_KEYS[Math.floor(Math.random()*GOOD_KEYS.length)];
   if (!isDead && streak>=7 && streak<STREAK_FEVER && Math.random()<0.35) key='rainbow';
-  items.push({key,x:margin+Math.random()*(W-margin*2),y:-ITEM_SIZE,dead:isDead,age:0,collected:false,collectAnim:0});
+  const sz=Math.round(ITEM_SIZE*uiScale());
+  items.push({key,x:margin+Math.random()*(W-margin*2),y:-sz,dead:isDead,age:0,collected:false,collectAnim:0,sz});
 }
 
 // ── End game ──────────────────────────────────────────────────────────────────
@@ -636,15 +638,15 @@ function render() {
       const d=Math.hypot(mouth.x-item.x,mouth.y-item.y);
       if (d<FEVER_RADIUS) {
         ctx.strokeStyle='rgba(254,229,42,0.55)'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.arc(0,0,ITEM_SIZE/2+6,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0,0,item.sz/2+6,0,Math.PI*2); ctx.stroke();
       }
     }
-    ctx.drawImage(spriteCache[item.key],-ITEM_SIZE/2,-ITEM_SIZE/2,ITEM_SIZE,ITEM_SIZE);
+    ctx.drawImage(spriteCache[item.key],-item.sz/2,-item.sz/2,item.sz,item.sz);
     if (!item.dead&&!item.collected&&BASE_PTS[item.key]>2) {
       ctx.globalAlpha=Math.max(0,alpha*0.9);
-      ctx.font='700 12px "Space Grotesk",Arial';
+      ctx.font=`700 ${Math.round(12*uiScale())}px "Space Grotesk",Arial`;
       ctx.fillStyle='#FEE52A'; ctx.textAlign='center'; ctx.textBaseline='top';
-      ctx.fillText('+'+BASE_PTS[item.key],0,ITEM_SIZE/2+2);
+      ctx.fillText('+'+BASE_PTS[item.key],0,item.sz/2+2);
     }
     ctx.restore();
   });
