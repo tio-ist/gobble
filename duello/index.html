@@ -556,68 +556,131 @@ function rrect(x,y,w,h,r){
 function drawPixelChar(cx, cy, size, active, color) {
   const u = Math.max(2, Math.round(size / 14));
   const t = Date.now() / 1000;
-  const by = active ? Math.sin(t * 4) * u : Math.sin(t * 1.4) * u * 0.3;
+
+  // Bob with squash-stretch
+  const bobPhase = active ? Math.sin(t * 4.5) : Math.sin(t * 1.3) * 0.25;
+  const by = bobPhase * u * 0.9;
+  const scaleY = active ? 1 + bobPhase * 0.07 : 1;
+  const scaleX = active ? 1 - bobPhase * 0.05 : 1;
+
   const D = 'rgba(10,10,10,0.92)';
-  const C = active ? color : 'rgba(255,255,255,0.2)';
-  const blush = color === '#FEE52A' ? '#D4780A' : '#FF4DA6';
+  const C = active ? color : 'rgba(255,255,255,0.18)';
+  const blush = color === '#FEE52A' ? '#D4600A' : '#FF3DA6';
+  const eyeIris = color === '#FEE52A' ? '#D4A000' : '#CC0080';
+
+  // Pupil drifts side to side gently
+  const pupilDrift = Math.round(Math.sin(t * 0.8) * 0.7);
+  // Blink every ~4s
+  const blinkCycle = (t * 0.25) % 1;
+  const blinking = active && blinkCycle > 0.94;
+  // Arms wave alternately
+  const la = Math.round(Math.sin(t * 5.2) * u * 1.2);
+  const ra = Math.round(Math.sin(t * 5.2 + Math.PI) * u * 1.2);
 
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(cy + by));
   ctx.imageSmoothingEnabled = false;
-  ctx.globalAlpha = active ? 1 : 0.4;
+  ctx.globalAlpha = active ? 1 : 0.35;
 
   function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x*u,y*u,w*u,h*u); }
 
+  // Squash-stretch applied to main body group
+  ctx.save();
+  ctx.scale(scaleX, scaleY);
+
   // Shadow
-  px(-5,8,10,1,'rgba(0,0,0,0.15)');
+  ctx.globalAlpha = active ? 0.18 : 0.07;
+  px(-6,8,12,2,'#000');
+  ctx.globalAlpha = active ? 1 : 0.35;
 
-  // Legs
-  px(-4,5,3,3,D); px(-3,6,2,2,C);
-  px( 2,5,3,3,D); px( 3,6,2,2,C);
+  // Ear nubs (round bumps on top of head)
+  px(-6,-8,3,4,D); px(-5,-7,2,3,C);
+  px( 4,-8,3,4,D); px( 4,-7,2,3,C);
 
-  // Arms — raised when active
-  const ay = active ? -1 : 0;
-  px(-8,ay,  4,3,D); px(-7,ay+1,3,2,C);
-  px( 5,ay,  4,3,D); px( 6,ay+1,3,2,C);
+  // Legs with little feet
+  px(-5,6,3,4,D); px(-4,7,2,2,C); px(-6,9,5,1,D); // left
+  px( 3,6,3,4,D); px( 3,7,2,2,C); px( 2,9,5,1,D); // right
 
-  // Body (wide & squat — 14×10)
-  px(-7,-5,14,10,D);
-  px(-6,-4,12, 8,C);
+  // Body (wide, squat — 14×12)
+  px(-7,-6,14,12,D);
+  px(-6,-5,12,10,C);
 
-  // Shine highlight (top-left corner)
+  // Shine highlight
   if (active) {
-    px(-5,-3,3,1,'rgba(255,255,255,0.6)');
-    px(-5,-2,1,1,'rgba(255,255,255,0.6)');
+    px(-5,-4,4,1,'rgba(255,255,255,0.65)');
+    px(-5,-3,1,2,'rgba(255,255,255,0.65)');
   }
 
   // Face
   if (active) {
-    // 2×2 kawaii eyes with 1×1 white highlight
-    px(-4,-2,2,2,D); px(-4,-2,1,1,'#fff');
-    px( 3,-2,2,2,D); px( 3,-2,1,1,'#fff');
-    // Blush (2×1 pixels on each cheek)
-    ctx.globalAlpha = 0.6;
-    px(-6,0,2,1,blush);
-    px( 5,0,2,1,blush);
+    if (blinking) {
+      // Closed happy arc eyes
+      px(-5,-1,5,1,D); px(-5,0,1,1,D); px(-1,0,1,1,D);
+      px( 1,-1,5,1,D); px( 1,0,1,1,D); px( 5,0,1,1,D);
+    } else {
+      // Left eye: 3×3 with iris + pupil + highlight
+      px(-5,-3,4,4,D);
+      px(-4,-2,3,3,eyeIris);
+      px(-4+pupilDrift,-2,2,2,D);
+      px(-4+pupilDrift,-2,1,1,'#fff');
+      // Right eye
+      px( 2,-3,4,4,D);
+      px( 3,-2,3,3,eyeIris);
+      px( 3+pupilDrift,-2,2,2,D);
+      px( 3+pupilDrift,-2,1,1,'#fff');
+    }
+    // Blush cheeks
+    ctx.globalAlpha = 0.55;
+    px(-7,0,3,1,blush);
+    px( 5,0,3,1,blush);
     ctx.globalAlpha = 1;
-    // U-shaped pixel smile
-    px(-3,1,1,1,D); px(3,1,1,1,D);  // corners
-    px(-3,2,1,1,D); px(3,2,1,1,D);
-    px(-2,3,5,1,D);                  // bottom
+    // Wide smile with teeth
+    px(-3,2,7,3,D);               // smile bg
+    px(-2,2,5,2,'#fff');          // teeth
+    px(-1,3,1,1,D); px(1,3,1,1,D); // tooth gap
+    px(-3,4,1,1,D); px(3,4,1,1,D); // corner dimples
   } else {
-    // Sleepy flat eyes (— —)
-    px(-4,-1,3,1,D);
-    px( 2,-1,3,1,D);
+    // Sleepy arched eyes (curved downward)
+    px(-5,-1,5,1,D); px(-1,0,1,1,D); px(-5,0,1,1,D);
+    px( 1,-1,5,1,D); px( 5,0,1,1,D); px( 1,0,1,1,D);
     // Small neutral mouth
-    px(-1,2,3,1,D);
-    // Floating z
-    const zp=(t*0.65)%1;
-    ctx.font=`900 ${u*2}px monospace`;
-    ctx.fillStyle='rgba(255,255,255,0.32)';
-    ctx.globalAlpha=0.4*Math.sin(zp*Math.PI);
+    px(-2,2,5,1,D);
+    // Floating zzz
+    const zp=(t*0.6)%1;
+    ctx.font=`900 ${u*2.5}px monospace`;
+    ctx.fillStyle='rgba(255,255,255,0.4)';
+    ctx.globalAlpha=0.5*Math.sin(zp*Math.PI);
     ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.fillText('z',7*u,(-8-zp*3)*u);
-    ctx.globalAlpha=0.4;
+    ctx.fillText('z', 8*u, (-9-zp*3)*u);
+    ctx.globalAlpha=0.35;
+  }
+
+  ctx.restore(); // end squash-stretch
+
+  // Arms drawn outside squash-stretch (so they float naturally)
+  ctx.globalAlpha = active ? 1 : 0.35;
+  // Left arm
+  px(-10, -2+la, 4, 3, D); px(-9, -1+la, 3, 2, C);
+  px(-10, 0+la, 3, 2, D); // hand
+  // Right arm
+  px( 7, -2+ra, 4, 3, D); px( 7, -1+ra, 3, 2, C);
+  px( 8, 0+ra, 3, 2, D); // hand
+
+  // Sparkles around active character
+  if (active) {
+    const sparks = [[-13,-7],[11,-9],[-14,1],[12,2],[-10,-11],[9,-5],[-11,6],[10,7]];
+    sparks.forEach(([sx,sy],i) => {
+      const phase = (t*1.8 + i*0.8) % (Math.PI*2);
+      const a = (Math.sin(phase)+1)/2;
+      if (a > 0.35) {
+        ctx.globalAlpha = a * 0.75;
+        ctx.fillStyle = i%2===0 ? '#fff' : color;
+        const ss = Math.max(1, Math.round(a * u * 0.7));
+        ctx.fillRect(sx*u - ss, sy*u, ss*2, Math.max(1,Math.round(u*0.3)));
+        ctx.fillRect(sx*u, sy*u - ss, Math.max(1,Math.round(u*0.3)), ss*2);
+      }
+    });
+    ctx.globalAlpha = 1;
   }
 
   ctx.restore();
