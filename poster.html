@@ -397,13 +397,13 @@ h1 .blue {
   <div class="content">
     <div class="top-row">
       <div class="logo-box">tio</div>
-      <span class="badge">oyuna davetlisin.</span>
+      <span class="badge">you're invited to play.</span>
     </div>
 
     <div class="title-block">
-      <p class="pre-title">yüzünü aç · meyve ye · zirveye çık</p>
+      <p class="pre-title">open wide · eat the fruit · top the board</p>
       <h1><span class="pink">gobble</span><br><span class="blue">challenge</span></h1>
-      <p class="subtitle">El gerekmez. Kamera aç, ağzını aç, meyveleri ye.<br>En yüksek skoru al, rekoru kır.</p>
+      <p class="subtitle">No hands needed. Open your mouth, eat the falling fruit.<br>Get the highest score. Be the best.</p>
     </div>
 
     <div class="divider"></div>
@@ -411,35 +411,35 @@ h1 .blue {
     <div class="how-row">
       <div class="how-item">
         <div class="how-num">1</div>
-        <div>Kameranı aç <span>Yüzünü ekrana göster</span></div>
+        <div>Allow camera <span>Face the screen — the AI tracks your mouth</span></div>
       </div>
       <div class="how-item">
         <div class="how-num">2</div>
-        <div>Ağzını aç <span>Düşen meyveleri ye, zehirli mantar yeme!</span></div>
+        <div>Open your mouth <span>Catch falling fruit, dodge the poison mushroom</span></div>
       </div>
       <div class="how-item">
         <div class="how-num">3</div>
-        <div>Solo veya Duello <span>Yan yana otur, arkadaşınla yarış</span></div>
+        <div>Solo or Duello <span>Sit side by side, split-screen, face a friend</span></div>
       </div>
     </div>
 
     <div class="qr-section">
       <img src="qr.jpg" alt="QR">
       <div class="qr-text">
-        <div class="qr-cta">Hemen oyna →</div>
+        <div class="qr-cta">Play now →</div>
         <div class="qr-url">gobble.tio.ist</div>
-        <div class="qr-sub">QR kodu tara veya adresi yaz.<br>Tarayıcı yeterli, uygulama yok.</div>
+        <div class="qr-sub">Scan the QR or type the address.<br>Works in any browser — no app needed.</div>
       </div>
     </div>
 
     <div class="bottom-row">
       <div class="bottom-cta">🏆 Be the best</div>
-      <div class="made-by">tio.ist · kadıköy</div>
+      <div class="made-by">tio.ist · kadıköy, istanbul</div>
     </div>
   </div>
 
 </div><!-- #card -->
-<button class="export-btn" onclick="exportCard()">JPEG olarak kaydet</button>
+<button class="export-btn" onclick="exportCard()">Save as JPEG</button>
 <script>
 function scaleCard() {
   const card = document.getElementById('card');
@@ -466,11 +466,11 @@ function exportCard() {
     card.style.transform = prev;
     const a = document.createElement('a');
     a.href = dataUrl; a.download = 'gobble-poster.jpg'; a.click();
-    btn.textContent = 'JPEG olarak kaydet';
+    btn.textContent = 'Save as JPEG';
     btn.disabled = false;
   }).catch(() => {
     card.style.transform = prev;
-    btn.textContent = 'Hata — tekrar dene';
+    btn.textContent = 'Error — try again';
     btn.disabled = false;
   });
 }
