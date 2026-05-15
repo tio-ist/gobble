@@ -2,420 +2,478 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GOBBLE — Print Poster</title>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&family=Inter:wght@400;600&display=swap');
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html, body {
-    width: 210mm;
-    height: 297mm;
-    background: #fff;
-  }
-
-  .poster {
-    width: 210mm;
-    height: 297mm;
-    background: #FFFDF5;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: 'Space Grotesk', Arial, sans-serif;
-  }
-
-  /* ── Background dots ── */
-  .poster::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(circle, #1502FF18 1.5px, transparent 1.5px);
-    background-size: 18px 18px;
-    z-index: 0;
-  }
-
-  /* ── Corner flowers SVG ── */
-  .flowers-top {
-    position: absolute;
-    top: 0; left: 0;
-    width: 210mm;
-    height: 88mm;
-    z-index: 1;
-  }
-  .flowers-bottom {
-    position: absolute;
-    bottom: 0; left: 0;
-    width: 210mm;
-    height: 72mm;
-    z-index: 1;
-  }
-
-  /* ── Content ── */
-  .content {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0 14mm;
-  }
-
-  .top-spacer { height: 54mm; }
-
-  /* tio badge */
-  .tio-badge {
-    font-family: 'Inter', sans-serif;
-    font-size: 11pt;
-    font-weight: 600;
-    letter-spacing: 0.22em;
-    color: #1502FF;
-    text-transform: uppercase;
-    margin-bottom: 3mm;
-    border: 1.5px solid #1502FF;
-    padding: 2px 10px;
-    border-radius: 20px;
-  }
-
-  /* GOBBLE title */
-  .title {
-    font-size: 72pt;
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    line-height: 1;
-    text-align: center;
-    background: linear-gradient(135deg, #1502FF 0%, #F83098 55%, #FEE52A 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 3mm;
-  }
-
-  /* Fruit strip */
-  .fruits {
-    font-size: 28pt;
-    letter-spacing: 0.12em;
-    margin-bottom: 5mm;
-  }
-
-  /* Tagline */
-  .tagline {
-    font-size: 16pt;
-    font-weight: 700;
-    color: #111;
-    text-align: center;
-    line-height: 1.35;
-    margin-bottom: 2mm;
-  }
-  .tagline span {
-    color: #F83098;
-  }
-
-  .sub-tagline {
-    font-family: 'Inter', sans-serif;
-    font-size: 10pt;
-    color: #555;
-    text-align: center;
-    margin-bottom: 8mm;
-    letter-spacing: 0.04em;
-  }
-
-  /* QR + URL block */
-  .qr-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #fff;
-    border: 3px solid #1502FF;
-    border-radius: 6mm;
-    padding: 5mm 8mm 4mm;
-    margin-bottom: 6mm;
-    box-shadow: 4px 4px 0 #F83098;
-  }
-
-  .qr-block img {
-    width: 38mm;
-    height: 38mm;
-    image-rendering: pixelated;
-    display: block;
-    margin-bottom: 3mm;
-  }
-
-  .url {
-    font-size: 15pt;
-    font-weight: 900;
-    color: #1502FF;
-    letter-spacing: 0.01em;
-  }
-
-  /* How to play */
-  .how {
-    background: #1502FF;
-    color: #fff;
-    border-radius: 4mm;
-    padding: 4mm 7mm;
-    text-align: center;
-    width: 100%;
-    margin-bottom: 5mm;
-  }
-  .how-title {
-    font-size: 9pt;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    opacity: 0.7;
-    margin-bottom: 2mm;
-  }
-  .how-steps {
-    font-size: 10pt;
-    font-weight: 600;
-    line-height: 1.7;
-    font-family: 'Inter', sans-serif;
-  }
-
-  /* Bottom spacer for flowers */
-  .bottom-spacer { height: 30mm; }
-
-  @media print {
-    html, body { margin: 0; padding: 0; }
-    .poster { page-break-after: avoid; }
-  }
+.export-btn {
+  position:fixed; bottom:16px; right:16px; z-index:999;
+  background:#0A0A0A; color:#FEE52A; border:none; padding:12px 24px;
+  font-size:14px; font-weight:700; cursor:pointer; border-radius:6px;
+  letter-spacing:0.05em; text-transform:uppercase;
+}
+.export-btn:hover { opacity:0.8; }
+.export-btn:disabled { opacity:0.5; }
 </style>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; min-height:100vh;
+  background:#e0dbd4;
+  display:flex; justify-content:center; align-items:flex-start;
+  padding:20px;
+  font-family:'Space Grotesk','Helvetica Neue',Arial,sans-serif;
+}
+#card {
+  width:1080px; height:1527px;
+  background:#FBF7EE;
+  overflow:hidden; position:relative;
+  flex-shrink:0;
+  transform-origin: top center;
+}
+.dots {
+  position:absolute; inset:0;
+  background-image: radial-gradient(circle, rgba(10,10,10,0.08) 1.5px, transparent 1.5px);
+  background-size: 32px 32px;
+}
+.pf { position:absolute; image-rendering:pixelated; image-rendering:crisp-edges; z-index:1; opacity:0.85; }
+
+.content {
+  position:absolute; inset:0;
+  padding:56px 72px 72px 72px;
+  display:flex; flex-direction:column;
+  z-index:10;
+}
+.top-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0; }
+.logo-box {
+  width:54px; height:54px; background:#0A0A0A; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:800; color:#FEE52A; letter-spacing:-0.03em;
+  box-shadow: 3px 3px 0 #1502FF;
+}
+.badge {
+  font-size:13px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+  white-space:nowrap;
+  color:#0A0A0A; background:#FEE52A;
+  padding:10px 20px; border:2px solid #0A0A0A;
+  box-shadow: 4px 4px 0 #0A0A0A;
+}
+
+/* title block */
+.title-block { margin-top:88px; }
+.pre-title {
+  font-size:19px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+  color:rgba(10,10,10,0.4); margin-bottom:16px;
+  display:flex; align-items:center; gap:10px;
+}
+.pre-title::before {
+  content:''; display:inline-block; width:28px; height:2px; background:#F83098;
+}
+h1 {
+  font-size:136px; font-weight:800; color:#0A0A0A;
+  line-height:0.88; letter-spacing:-0.055em;
+}
+h1 .pink {
+  color:#F83098;
+  font-family:'Instrument Serif', serif;
+  font-style:italic; font-weight:400;
+  font-size:148px;
+  letter-spacing:-0.04em;
+}
+h1 .blue {
+  display:inline-block; background:#1502FF; color:#FBF7EE;
+  padding:0.02em 0.1em; line-height:0.9;
+  box-shadow: 5px 5px 0 #0A0A0A;
+  border:2px solid #0A0A0A;
+}
+.subtitle {
+  margin-top:24px; font-size:24px; font-weight:500; color:#0A0A0A;
+  letter-spacing:-0.015em; line-height:1.45; opacity:0.6;
+}
+
+/* divider */
+.divider {
+  margin: 48px 0;
+  height:2px; background:#0A0A0A; opacity:0.1;
+}
+
+/* how to play */
+.how-row {
+  display:flex; flex-direction:column; gap:16px;
+  margin-bottom:48px;
+}
+.how-item {
+  display:flex; align-items:flex-start; gap:16px;
+  font-size:20px; font-weight:600; color:#0A0A0A; letter-spacing:-0.01em;
+  line-height:1.3;
+}
+.how-num {
+  width:36px; height:36px; background:#0A0A0A; color:#FEE52A; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:800; flex-shrink:0; margin-top:2px;
+}
+.how-item span { opacity:0.5; font-weight:400; font-size:16px; display:block; }
+
+/* QR block */
+.qr-section {
+  display:flex; align-items:center; gap:36px;
+  background:#fff; border:2px solid #0A0A0A;
+  padding:32px 36px;
+  box-shadow: 6px 6px 0 #0A0A0A;
+  margin-bottom:auto;
+}
+.qr-section img {
+  width:148px; height:148px;
+  image-rendering:pixelated;
+  display:block; flex-shrink:0;
+}
+.qr-text { flex:1; }
+.qr-cta {
+  font-size:15px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  color:rgba(10,10,10,0.4); margin-bottom:8px;
+}
+.qr-url {
+  font-size:42px; font-weight:800; color:#1502FF;
+  letter-spacing:-0.03em; line-height:1;
+  margin-bottom:10px;
+}
+.qr-sub {
+  font-size:16px; font-weight:500; color:#0A0A0A; opacity:0.5;
+  line-height:1.4;
+}
+
+/* bottom */
+.bottom-row {
+  display:flex; justify-content:space-between; align-items:flex-end;
+  margin-top:auto; padding-top:40px;
+}
+.bottom-cta {
+  display:inline-flex; align-items:center; gap:10px;
+  font-size:19px; font-weight:800; color:#FBF7EE;
+  background:#F83098; padding:18px 36px; border:2px solid #0A0A0A;
+  box-shadow: 5px 5px 0 #0A0A0A;
+  letter-spacing:0.02em; text-transform:uppercase;
+}
+.made-by {
+  font-size:14px; font-weight:600; letter-spacing:0.06em;
+  color:rgba(10,10,10,0.3); text-transform:uppercase;
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="poster">
+<div id="card">
+  <div class="dots"></div>
 
-  <!-- ── Top flowers ── -->
-  <svg class="flowers-top" viewBox="0 0 794 332" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <!-- Reusable cherry blossom petal -->
-      <path id="petal" d="M0,-18 C5,-14 7,-6 0,0 C-7,-6 -5,-14 0,-18Z"/>
-    </defs>
-
-    <!-- LEFT CLUSTER -->
-    <!-- Main bloom 1 -->
-    <g transform="translate(62,78)">
-      <g transform="rotate(0)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(72)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(144)"><use href="#petal" fill="#F83098" opacity=".7"/></g>
-      <g transform="rotate(216)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(288)"><use href="#petal" fill="#F9C9DC"/></g>
-      <circle r="5" fill="#FEE52A"/>
-      <circle r="2" fill="#F83098"/>
-    </g>
-
-    <!-- Main bloom 2 -->
-    <g transform="translate(118,42)">
-      <g transform="rotate(20)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
-      <g transform="rotate(92)"><use href="#petal" fill="#F83098" opacity=".6" transform="scale(0.85)"/></g>
-      <g transform="rotate(164)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
-      <g transform="rotate(236)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
-      <g transform="rotate(308)"><use href="#petal" fill="#F9C9DC" transform="scale(0.85)"/></g>
-      <circle r="4" fill="#FEE52A"/>
-    </g>
-
-    <!-- Small bloom 3 -->
-    <g transform="translate(24,38)">
-      <g transform="rotate(10)"><use href="#petal" fill="#F83098" opacity=".5" transform="scale(0.65)"/></g>
-      <g transform="rotate(82)"><use href="#petal" fill="#FADADD" transform="scale(0.65)"/></g>
-      <g transform="rotate(154)"><use href="#petal" fill="#FADADD" transform="scale(0.65)"/></g>
-      <g transform="rotate(226)"><use href="#petal" fill="#FADADD" transform="scale(0.65)"/></g>
-      <g transform="rotate(298)"><use href="#petal" fill="#F9C9DC" transform="scale(0.65)"/></g>
-      <circle r="3" fill="#FEE52A"/>
-    </g>
-
-    <!-- Branch lines left -->
-    <path d="M0,120 Q30,80 62,78" stroke="#6B3D2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <path d="M30,95 Q70,55 118,42" stroke="#6B3D2E" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <path d="M15,108 Q18,60 24,38" stroke="#6B3D2E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-
-    <!-- Loose petals left -->
-    <g transform="translate(155,60) rotate(35)"><use href="#petal" fill="#F9C9DC" transform="scale(0.5)"/></g>
-    <g transform="translate(85,110) rotate(-20)"><use href="#petal" fill="#F83098" opacity=".4" transform="scale(0.4)"/></g>
-    <g transform="translate(170,95) rotate(60)"><use href="#petal" fill="#FADADD" transform="scale(0.45)"/></g>
-
-    <!-- RIGHT CLUSTER -->
-    <g transform="translate(732,68)">
-      <g transform="rotate(15)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(87)"><use href="#petal" fill="#F83098" opacity=".65"/></g>
-      <g transform="rotate(159)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(231)"><use href="#petal" fill="#FADADD"/></g>
-      <g transform="rotate(303)"><use href="#petal" fill="#F9C9DC"/></g>
-      <circle r="5" fill="#FEE52A"/>
-      <circle r="2" fill="#F83098"/>
-    </g>
-
-    <g transform="translate(680,38)">
-      <g transform="rotate(-10)"><use href="#petal" fill="#FADADD" transform="scale(0.8)"/></g>
-      <g transform="rotate(62)"><use href="#petal" fill="#F83098" opacity=".55" transform="scale(0.8)"/></g>
-      <g transform="rotate(134)"><use href="#petal" fill="#FADADD" transform="scale(0.8)"/></g>
-      <g transform="rotate(206)"><use href="#petal" fill="#F9C9DC" transform="scale(0.8)"/></g>
-      <g transform="rotate(278)"><use href="#petal" fill="#FADADD" transform="scale(0.8)"/></g>
-      <circle r="4" fill="#FEE52A"/>
-    </g>
-
-    <g transform="translate(770,36)">
-      <g transform="rotate(5)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
-      <g transform="rotate(77)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
-      <g transform="rotate(149)"><use href="#petal" fill="#F83098" opacity=".5" transform="scale(0.6)"/></g>
-      <g transform="rotate(221)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
-      <g transform="rotate(293)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
-      <circle r="3" fill="#FEE52A"/>
-    </g>
-
-    <!-- Branch lines right -->
-    <path d="M794,110 Q762,72 732,68" stroke="#6B3D2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <path d="M764,88 Q726,50 680,38" stroke="#6B3D2E" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <path d="M780,100 Q776,56 770,36" stroke="#6B3D2E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-
-    <!-- Loose petals right -->
-    <g transform="translate(640,72) rotate(-40)"><use href="#petal" fill="#F9C9DC" transform="scale(0.5)"/></g>
-    <g transform="translate(700,108) rotate(25)"><use href="#petal" fill="#F83098" opacity=".35" transform="scale(0.45)"/></g>
-    <g transform="translate(620,52) rotate(70)"><use href="#petal" fill="#FADADD" transform="scale(0.4)"/></g>
-
-    <!-- TOP CENTER bloom -->
-    <g transform="translate(397,22)">
-      <g transform="rotate(0)"><use href="#petal" fill="#F9C9DC" transform="scale(0.9)"/></g>
-      <g transform="rotate(72)"><use href="#petal" fill="#F83098" opacity=".6" transform="scale(0.9)"/></g>
-      <g transform="rotate(144)"><use href="#petal" fill="#FADADD" transform="scale(0.9)"/></g>
-      <g transform="rotate(216)"><use href="#petal" fill="#F9C9DC" transform="scale(0.9)"/></g>
-      <g transform="rotate(288)"><use href="#petal" fill="#FADADD" transform="scale(0.9)"/></g>
-      <circle r="4.5" fill="#FEE52A"/>
-      <circle r="2" fill="#F83098"/>
-    </g>
-
-    <!-- Scattered petals middle-top -->
-    <g transform="translate(300,50) rotate(15)"><use href="#petal" fill="#F9C9DC" transform="scale(0.42)"/></g>
-    <g transform="translate(490,42) rotate(-25)"><use href="#petal" fill="#FADADD" transform="scale(0.38)"/></g>
-    <g transform="translate(250,80) rotate(55)"><use href="#petal" fill="#F83098" opacity=".3" transform="scale(0.35)"/></g>
-    <g transform="translate(540,68) rotate(-45)"><use href="#petal" fill="#F9C9DC" transform="scale(0.4)"/></g>
-
-    <!-- Yellow accent dots scattered -->
-    <circle cx="145" cy="55" r="3" fill="#FEE52A"/>
-    <circle cx="648" cy="48" r="3" fill="#FEE52A"/>
-    <circle cx="200" cy="90" r="2" fill="#F83098" opacity=".5"/>
-    <circle cx="596" cy="84" r="2" fill="#F83098" opacity=".5"/>
-    <circle cx="350" cy="30" r="2.5" fill="#1502FF" opacity=".25"/>
-    <circle cx="444" cy="26" r="2" fill="#1502FF" opacity=".2"/>
+  <!-- FLOWER A: Pink daisy — top left, 144px -->
+  <svg class="pf" style="left:20px;top:20px;width:140px;height:164px;" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="11" y="0" width="2" height="3" fill="#F83098"/>
+    <rect x="14" y="1" width="3" height="2" fill="#F83098"/>
+    <rect x="15" y="3" width="2" height="2" fill="#F83098"/>
+    <rect x="18" y="5" width="3" height="2" fill="#F83098"/>
+    <rect x="16" y="8" width="2" height="2" fill="#F83098"/>
+    <rect x="14" y="10" width="3" height="2" fill="#F83098"/>
+    <rect x="11" y="12" width="2" height="3" fill="#F83098"/>
+    <rect x="7" y="10" width="3" height="2" fill="#F83098"/>
+    <rect x="6" y="8" width="2" height="2" fill="#F83098"/>
+    <rect x="3" y="5" width="3" height="2" fill="#F83098"/>
+    <rect x="6" y="1" width="3" height="2" fill="#F83098"/>
+    <rect x="7" y="3" width="2" height="2" fill="#F83098"/>
+    <rect x="9" y="4" width="6" height="7" fill="#FEE52A"/>
+    <rect x="8" y="5" width="8" height="5" fill="#FEE52A"/>
+    <rect x="10" y="5" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="13" y="5" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="9" y="7" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="12" y="7" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="11" y="9" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="11" y="15" width="2" height="6" fill="#2d6a2d"/>
+    <rect x="7" y="17" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="6" y="18" width="2" height="2" fill="#3a8a3a"/>
+    <rect x="13" y="19" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="16" y="20" width="2" height="2" fill="#3a8a3a"/>
+    <rect x="9" y="21" width="6" height="2" fill="#2d6a2d"/>
   </svg>
 
-  <!-- ── Bottom flowers ── -->
-  <svg class="flowers-bottom" viewBox="0 0 794 272" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-    <!-- LEFT -->
-    <g transform="translate(55,200)">
-      <g transform="rotate(5)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(77)"><use href="#petal" fill="#F83098" opacity=".6"/></g>
-      <g transform="rotate(149)"><use href="#petal" fill="#FADADD"/></g>
-      <g transform="rotate(221)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(293)"><use href="#petal" fill="#FADADD"/></g>
-      <circle r="5" fill="#FEE52A"/>
-    </g>
-    <g transform="translate(110,240)">
-      <g transform="rotate(-12)"><use href="#petal" fill="#FADADD" transform="scale(0.75)"/></g>
-      <g transform="rotate(60)"><use href="#petal" fill="#F83098" opacity=".55" transform="scale(0.75)"/></g>
-      <g transform="rotate(132)"><use href="#petal" fill="#F9C9DC" transform="scale(0.75)"/></g>
-      <g transform="rotate(204)"><use href="#petal" fill="#FADADD" transform="scale(0.75)"/></g>
-      <g transform="rotate(276)"><use href="#petal" fill="#F9C9DC" transform="scale(0.75)"/></g>
-      <circle r="3.5" fill="#FEE52A"/>
-    </g>
-    <g transform="translate(20,248)">
-      <g transform="rotate(18)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
-      <g transform="rotate(90)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
-      <g transform="rotate(162)"><use href="#petal" fill="#F83098" opacity=".45" transform="scale(0.6)"/></g>
-      <g transform="rotate(234)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
-      <g transform="rotate(306)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
-      <circle r="3" fill="#FEE52A"/>
-    </g>
-    <path d="M0,272 Q28,220 55,200" stroke="#6B3D2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <path d="M22,265 Q60,248 110,240" stroke="#6B3D2E" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <path d="M8,260 Q12,252 20,248" stroke="#6B3D2E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- FLOWER B: Blue tulip — top left area -->
+  <svg class="pf" style="left:164px;top:8px;width:110px;height:130px;" viewBox="0 0 20 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="7" y="0" width="6" height="2" fill="#1502FF"/>
+    <rect x="5" y="2" width="10" height="2" fill="#1502FF"/>
+    <rect x="4" y="4" width="12" height="2" fill="#1502FF"/>
+    <rect x="3" y="6" width="14" height="3" fill="#1502FF"/>
+    <rect x="8" y="2" width="4" height="2" fill="#4040FF"/>
+    <rect x="7" y="4" width="6" height="2" fill="#4040FF"/>
+    <rect x="9" y="0" width="2" height="9" fill="#0A0A0A" opacity=".25"/>
+    <rect x="7" y="9" width="6" height="2" fill="#2d6a2d"/>
+    <rect x="8" y="11" width="4" height="1" fill="#2d6a2d"/>
+    <rect x="9" y="12" width="2" height="6" fill="#2d6a2d"/>
+    <rect x="5" y="14" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="4" y="15" width="2" height="3" fill="#3a8a3a"/>
+    <rect x="13" y="16" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="15" y="17" width="2" height="3" fill="#3a8a3a"/>
+    <rect x="8" y="18" width="4" height="2" fill="#2d6a2d"/>
+  </svg>
 
-    <!-- RIGHT -->
-    <g transform="translate(739,198)">
-      <g transform="rotate(-8)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(64)"><use href="#petal" fill="#F83098" opacity=".6"/></g>
-      <g transform="rotate(136)"><use href="#petal" fill="#FADADD"/></g>
-      <g transform="rotate(208)"><use href="#petal" fill="#F9C9DC"/></g>
-      <g transform="rotate(280)"><use href="#petal" fill="#FADADD"/></g>
-      <circle r="5" fill="#FEE52A"/>
-    </g>
-    <g transform="translate(682,238)">
-      <g transform="rotate(10)"><use href="#petal" fill="#FADADD" transform="scale(0.75)"/></g>
-      <g transform="rotate(82)"><use href="#petal" fill="#F83098" opacity=".55" transform="scale(0.75)"/></g>
-      <g transform="rotate(154)"><use href="#petal" fill="#F9C9DC" transform="scale(0.75)"/></g>
-      <g transform="rotate(226)"><use href="#petal" fill="#FADADD" transform="scale(0.75)"/></g>
-      <g transform="rotate(298)"><use href="#petal" fill="#F9C9DC" transform="scale(0.75)"/></g>
-      <circle r="3.5" fill="#FEE52A"/>
-    </g>
-    <g transform="translate(774,246)">
-      <g transform="rotate(-15)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
-      <g transform="rotate(57)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
-      <g transform="rotate(129)"><use href="#petal" fill="#F83098" opacity=".45" transform="scale(0.6)"/></g>
-      <g transform="rotate(201)"><use href="#petal" fill="#F9C9DC" transform="scale(0.6)"/></g>
-      <g transform="rotate(273)"><use href="#petal" fill="#FADADD" transform="scale(0.6)"/></g>
-      <circle r="3" fill="#FEE52A"/>
-    </g>
-    <path d="M794,272 Q766,218 739,198" stroke="#6B3D2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <path d="M772,263 Q730,246 682,238" stroke="#6B3D2E" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <path d="M786,258 Q782,250 774,246" stroke="#6B3D2E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- FLOWER C: Yellow sunflower — top right -->
+  <svg class="pf" style="right:20px;top:16px;width:148px;height:148px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="11" y="0" width="2" height="4" fill="#FEE52A"/>
+    <rect x="16" y="1" width="2" height="3" fill="#FEE52A"/>
+    <rect x="20" y="4" width="3" height="2" fill="#FEE52A"/>
+    <rect x="21" y="8" width="3" height="2" fill="#FEE52A"/>
+    <rect x="20" y="12" width="3" height="2" fill="#FEE52A"/>
+    <rect x="16" y="17" width="2" height="3" fill="#FEE52A"/>
+    <rect x="11" y="20" width="2" height="4" fill="#FEE52A"/>
+    <rect x="6" y="17" width="2" height="3" fill="#FEE52A"/>
+    <rect x="1" y="12" width="3" height="2" fill="#FEE52A"/>
+    <rect x="0" y="8" width="3" height="2" fill="#FEE52A"/>
+    <rect x="1" y="4" width="3" height="2" fill="#FEE52A"/>
+    <rect x="6" y="1" width="2" height="3" fill="#FEE52A"/>
+    <rect x="15" y="2" width="2" height="2" fill="#FEE52A"/>
+    <rect x="19" y="6" width="2" height="2" fill="#FEE52A"/>
+    <rect x="19" y="14" width="2" height="2" fill="#FEE52A"/>
+    <rect x="15" y="18" width="2" height="2" fill="#FEE52A"/>
+    <rect x="7" y="18" width="2" height="2" fill="#FEE52A"/>
+    <rect x="3" y="14" width="2" height="2" fill="#FEE52A"/>
+    <rect x="3" y="6" width="2" height="2" fill="#FEE52A"/>
+    <rect x="7" y="2" width="2" height="2" fill="#FEE52A"/>
+    <rect x="7" y="5" width="10" height="14" fill="#F83098"/>
+    <rect x="5" y="7" width="14" height="10" fill="#F83098"/>
+    <rect x="8" y="6" width="8" height="12" fill="#0A0A0A"/>
+    <rect x="6" y="8" width="12" height="8" fill="#0A0A0A"/>
+    <rect x="9" y="8" width="2" height="2" fill="#FEE52A"/>
+    <rect x="12" y="8" width="2" height="2" fill="#FEE52A"/>
+    <rect x="10" y="10" width="4" height="2" fill="#FEE52A"/>
+    <rect x="9" y="12" width="2" height="2" fill="#FEE52A"/>
+    <rect x="12" y="12" width="2" height="2" fill="#FEE52A"/>
+  </svg>
 
-    <!-- CENTER BOTTOM -->
-    <g transform="translate(397,258)">
-      <g transform="rotate(0)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
-      <g transform="rotate(72)"><use href="#petal" fill="#F83098" opacity=".55" transform="scale(0.85)"/></g>
-      <g transform="rotate(144)"><use href="#petal" fill="#F9C9DC" transform="scale(0.85)"/></g>
-      <g transform="rotate(216)"><use href="#petal" fill="#FADADD" transform="scale(0.85)"/></g>
-      <g transform="rotate(288)"><use href="#petal" fill="#F9C9DC" transform="scale(0.85)"/></g>
-      <circle r="4" fill="#FEE52A"/>
-    </g>
+  <!-- FLOWER D: Small pink pansy — top right area -->
+  <svg class="pf" style="right:16px;top:168px;width:96px;height:96px;" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="6" y="0" width="4" height="3" fill="#F83098"/>
+    <rect x="0" y="6" width="3" height="4" fill="#F83098"/>
+    <rect x="13" y="6" width="3" height="4" fill="#F83098"/>
+    <rect x="6" y="13" width="4" height="3" fill="#F83098"/>
+    <rect x="2" y="2" width="3" height="3" fill="#F83098"/>
+    <rect x="11" y="2" width="3" height="3" fill="#F83098"/>
+    <rect x="2" y="11" width="3" height="3" fill="#F83098"/>
+    <rect x="11" y="11" width="3" height="3" fill="#F83098"/>
+    <rect x="4" y="3" width="8" height="10" fill="#F83098"/>
+    <rect x="3" y="4" width="10" height="8" fill="#F83098"/>
+    <rect x="5" y="4" width="6" height="8" fill="#1502FF"/>
+    <rect x="4" y="5" width="8" height="6" fill="#1502FF"/>
+    <rect x="6" y="6" width="4" height="4" fill="#FEE52A"/>
+    <rect x="7" y="7" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="7" y="4" width="1" height="3" fill="rgba(0,0,0,0.2)"/>
+    <rect x="4" y="7" width="3" height="1" fill="rgba(0,0,0,0.2)"/>
+    <rect x="9" y="7" width="3" height="1" fill="rgba(0,0,0,0.2)"/>
+  </svg>
 
-    <!-- Scattered petals -->
-    <g transform="translate(160,220) rotate(30)"><use href="#petal" fill="#F9C9DC" transform="scale(0.42)"/></g>
-    <g transform="translate(630,215) rotate(-20)"><use href="#petal" fill="#FADADD" transform="scale(0.45)"/></g>
-    <g transform="translate(290,252) rotate(55)"><use href="#petal" fill="#F83098" opacity=".3" transform="scale(0.38)"/></g>
-    <g transform="translate(505,248) rotate(-35)"><use href="#petal" fill="#F9C9DC" transform="scale(0.4)"/></g>
+  <!-- FLOWER I: Tiny accent — top, near left -->
+  <svg class="pf" style="left:280px;top:24px;width:68px;height:68px;" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="5" y="0" width="2" height="2" fill="#F83098"/>
+    <rect x="0" y="5" width="2" height="2" fill="#F83098"/>
+    <rect x="10" y="5" width="2" height="2" fill="#F83098"/>
+    <rect x="5" y="10" width="2" height="2" fill="#F83098"/>
+    <rect x="1" y="1" width="2" height="2" fill="#F83098"/>
+    <rect x="9" y="1" width="2" height="2" fill="#F83098"/>
+    <rect x="1" y="9" width="2" height="2" fill="#F83098"/>
+    <rect x="9" y="9" width="2" height="2" fill="#F83098"/>
+    <rect x="3" y="3" width="6" height="6" fill="#FEE52A"/>
+    <rect x="4" y="4" width="4" height="4" fill="#0A0A0A"/>
+    <rect x="5" y="5" width="2" height="2" fill="#FEE52A"/>
+  </svg>
 
-    <circle cx="148" cy="210" r="3" fill="#FEE52A"/>
-    <circle cx="645" cy="206" r="3" fill="#FEE52A"/>
-    <circle cx="220" cy="240" r="2" fill="#F83098" opacity=".5"/>
-    <circle cx="573" cy="236" r="2" fill="#F83098" opacity=".5"/>
+  <!-- FLOWER E: Blue daisy — bottom left corner -->
+  <svg class="pf" style="left:-28px;bottom:0px;width:132px;height:156px;" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="11" y="0" width="2" height="3" fill="#1502FF"/>
+    <rect x="14" y="1" width="3" height="2" fill="#1502FF"/>
+    <rect x="15" y="3" width="2" height="2" fill="#1502FF"/>
+    <rect x="18" y="5" width="3" height="2" fill="#1502FF"/>
+    <rect x="16" y="8" width="2" height="2" fill="#1502FF"/>
+    <rect x="14" y="10" width="3" height="2" fill="#1502FF"/>
+    <rect x="11" y="12" width="2" height="3" fill="#1502FF"/>
+    <rect x="7" y="10" width="3" height="2" fill="#1502FF"/>
+    <rect x="6" y="8" width="2" height="2" fill="#1502FF"/>
+    <rect x="3" y="5" width="3" height="2" fill="#1502FF"/>
+    <rect x="6" y="1" width="3" height="2" fill="#1502FF"/>
+    <rect x="7" y="3" width="2" height="2" fill="#1502FF"/>
+    <rect x="9" y="4" width="6" height="7" fill="#FEE52A"/>
+    <rect x="8" y="5" width="8" height="5" fill="#FEE52A"/>
+    <rect x="10" y="5" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="13" y="5" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="9" y="7" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="12" y="7" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="11" y="9" width="2" height="2" fill="#0A0A0A"/>
+    <rect x="11" y="15" width="2" height="6" fill="#2d6a2d"/>
+    <rect x="7" y="17" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="6" y="18" width="2" height="2" fill="#3a8a3a"/>
+    <rect x="13" y="19" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="16" y="20" width="2" height="2" fill="#3a8a3a"/>
+    <rect x="9" y="21" width="6" height="2" fill="#2d6a2d"/>
+  </svg>
+
+  <!-- FLOWER F: Yellow tulip — bottom left area -->
+  <svg class="pf" style="left:80px;bottom:-10px;width:106px;height:124px;" viewBox="0 0 20 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="7" y="0" width="6" height="2" fill="#FEE52A"/>
+    <rect x="5" y="2" width="10" height="2" fill="#FEE52A"/>
+    <rect x="4" y="4" width="12" height="2" fill="#FEE52A"/>
+    <rect x="3" y="6" width="14" height="3" fill="#FEE52A"/>
+    <rect x="8" y="2" width="4" height="2" fill="#F83098"/>
+    <rect x="7" y="4" width="6" height="2" fill="#F83098"/>
+    <rect x="9" y="0" width="2" height="9" fill="rgba(0,0,0,0.12)"/>
+    <rect x="7" y="9" width="6" height="2" fill="#2d6a2d"/>
+    <rect x="8" y="11" width="4" height="1" fill="#2d6a2d"/>
+    <rect x="9" y="12" width="2" height="6" fill="#2d6a2d"/>
+    <rect x="5" y="14" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="4" y="15" width="2" height="3" fill="#3a8a3a"/>
+    <rect x="13" y="16" width="4" height="2" fill="#3a8a3a"/>
+    <rect x="15" y="17" width="2" height="3" fill="#3a8a3a"/>
+    <rect x="8" y="18" width="4" height="2" fill="#2d6a2d"/>
+  </svg>
+
+  <!-- FLOWER G: Pink sunflower — bottom right corner -->
+  <svg class="pf" style="right:20px;bottom:44px;width:144px;height:144px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="11" y="0" width="2" height="4" fill="#F83098"/>
+    <rect x="16" y="1" width="2" height="3" fill="#F83098"/>
+    <rect x="20" y="4" width="3" height="2" fill="#F83098"/>
+    <rect x="21" y="8" width="3" height="2" fill="#F83098"/>
+    <rect x="20" y="12" width="3" height="2" fill="#F83098"/>
+    <rect x="16" y="17" width="2" height="3" fill="#F83098"/>
+    <rect x="11" y="20" width="2" height="4" fill="#F83098"/>
+    <rect x="6" y="17" width="2" height="3" fill="#F83098"/>
+    <rect x="1" y="12" width="3" height="2" fill="#F83098"/>
+    <rect x="0" y="8" width="3" height="2" fill="#F83098"/>
+    <rect x="1" y="4" width="3" height="2" fill="#F83098"/>
+    <rect x="6" y="1" width="2" height="3" fill="#F83098"/>
+    <rect x="15" y="2" width="2" height="2" fill="#F83098"/>
+    <rect x="19" y="6" width="2" height="2" fill="#F83098"/>
+    <rect x="19" y="14" width="2" height="2" fill="#F83098"/>
+    <rect x="15" y="18" width="2" height="2" fill="#F83098"/>
+    <rect x="7" y="18" width="2" height="2" fill="#F83098"/>
+    <rect x="3" y="14" width="2" height="2" fill="#F83098"/>
+    <rect x="3" y="6" width="2" height="2" fill="#F83098"/>
+    <rect x="7" y="2" width="2" height="2" fill="#F83098"/>
+    <rect x="7" y="5" width="10" height="14" fill="#1502FF"/>
+    <rect x="5" y="7" width="14" height="10" fill="#1502FF"/>
+    <rect x="8" y="6" width="8" height="12" fill="#0A0A0A"/>
+    <rect x="6" y="8" width="12" height="8" fill="#0A0A0A"/>
+    <rect x="9" y="8" width="2" height="2" fill="#F83098"/>
+    <rect x="12" y="8" width="2" height="2" fill="#F83098"/>
+    <rect x="10" y="10" width="4" height="2" fill="#F83098"/>
+    <rect x="9" y="12" width="2" height="2" fill="#F83098"/>
+    <rect x="12" y="12" width="2" height="2" fill="#F83098"/>
+  </svg>
+
+  <!-- FLOWER H: Small yellow pansy — bottom right area -->
+  <svg class="pf" style="right:172px;bottom:44px;width:84px;height:84px;" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="6" y="0" width="4" height="3" fill="#FEE52A"/>
+    <rect x="0" y="6" width="3" height="4" fill="#FEE52A"/>
+    <rect x="13" y="6" width="3" height="4" fill="#FEE52A"/>
+    <rect x="6" y="13" width="4" height="3" fill="#FEE52A"/>
+    <rect x="2" y="2" width="3" height="3" fill="#FEE52A"/>
+    <rect x="11" y="2" width="3" height="3" fill="#FEE52A"/>
+    <rect x="2" y="11" width="3" height="3" fill="#FEE52A"/>
+    <rect x="11" y="11" width="3" height="3" fill="#FEE52A"/>
+    <rect x="4" y="3" width="8" height="10" fill="#FEE52A"/>
+    <rect x="3" y="4" width="10" height="8" fill="#FEE52A"/>
+    <rect x="5" y="4" width="6" height="8" fill="#F83098"/>
+    <rect x="4" y="5" width="8" height="6" fill="#F83098"/>
+    <rect x="6" y="6" width="4" height="4" fill="#0A0A0A"/>
+    <rect x="7" y="7" width="2" height="2" fill="#FEE52A"/>
+  </svg>
+
+  <!-- FLOWER J: Tiny blue — bottom, near right cluster -->
+  <svg class="pf" style="right:268px;bottom:40px;width:68px;height:68px;" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="5" y="0" width="2" height="2" fill="#1502FF"/>
+    <rect x="0" y="5" width="2" height="2" fill="#1502FF"/>
+    <rect x="10" y="5" width="2" height="2" fill="#1502FF"/>
+    <rect x="5" y="10" width="2" height="2" fill="#1502FF"/>
+    <rect x="1" y="1" width="2" height="2" fill="#1502FF"/>
+    <rect x="9" y="1" width="2" height="2" fill="#1502FF"/>
+    <rect x="1" y="9" width="2" height="2" fill="#1502FF"/>
+    <rect x="9" y="9" width="2" height="2" fill="#1502FF"/>
+    <rect x="3" y="3" width="6" height="6" fill="#FEE52A"/>
+    <rect x="4" y="4" width="4" height="4" fill="#0A0A0A"/>
+    <rect x="5" y="5" width="2" height="2" fill="#1502FF"/>
   </svg>
 
   <div class="content">
-    <div class="top-spacer"></div>
-
-    <div class="tio-badge">tio.ist presents</div>
-
-    <div class="title">GOBBLE</div>
-
-    <div class="fruits">🍓 🍇 🌸 🍎 🌟</div>
-
-    <div class="tagline">
-      Open your mouth.<br>
-      <span>Eat the fruits.</span><br>
-      Beat everyone.
+    <div class="top-row">
+      <div class="logo-box">tio</div>
+      <span class="badge">oyuna davetlisin.</span>
     </div>
 
-    <div class="sub-tagline">The face-tracking eating game — no hands required</div>
-
-    <div class="qr-block">
-      <img src="qr.jpg" alt="QR code for gobble.tio.ist">
-      <div class="url">gobble.tio.ist</div>
+    <div class="title-block">
+      <p class="pre-title">yüzünü aç · meyve ye · zirveye çık</p>
+      <h1><span class="pink">gobble</span><br><span class="blue">challenge</span></h1>
+      <p class="subtitle">El gerekmez. Kamera aç, ağzını aç, meyveleri ye.<br>En yüksek skoru al, rekoru kır.</p>
     </div>
 
-    <div class="how">
-      <div class="how-title">How to play</div>
-      <div class="how-steps">
-        Open camera &nbsp;·&nbsp; Face the screen &nbsp;·&nbsp; Open your mouth to eat<br>
-        Solo mode or Duello — face a friend side by side
+    <div class="divider"></div>
+
+    <div class="how-row">
+      <div class="how-item">
+        <div class="how-num">1</div>
+        <div>Kameranı aç <span>Yüzünü ekrana göster</span></div>
+      </div>
+      <div class="how-item">
+        <div class="how-num">2</div>
+        <div>Ağzını aç <span>Düşen meyveleri ye, zehirli mantar yeme!</span></div>
+      </div>
+      <div class="how-item">
+        <div class="how-num">3</div>
+        <div>Solo veya Duello <span>Yan yana otur, arkadaşınla yarış</span></div>
       </div>
     </div>
 
-    <div class="bottom-spacer"></div>
+    <div class="qr-section">
+      <img src="qr.jpg" alt="QR">
+      <div class="qr-text">
+        <div class="qr-cta">Hemen oyna →</div>
+        <div class="qr-url">gobble.tio.ist</div>
+        <div class="qr-sub">QR kodu tara veya adresi yaz.<br>Tarayıcı yeterli, uygulama yok.</div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="bottom-cta">🏆 Be the best</div>
+      <div class="made-by">tio.ist · kadıköy</div>
+    </div>
   </div>
 
-</div>
+</div><!-- #card -->
+<button class="export-btn" onclick="exportCard()">JPEG olarak kaydet</button>
+<script>
+function scaleCard() {
+  const card = document.getElementById('card');
+  const vw = window.innerWidth - 40;
+  const scale = Math.min(1, vw / 1080);
+  card.style.transform = `scale(${scale})`;
+  document.body.style.minHeight = (1527 * scale + 40) + 'px';
+}
+scaleCard();
+window.addEventListener('resize', scaleCard);
+</script>
+<script>
+function exportCard() {
+  const btn = document.querySelector('.export-btn');
+  btn.textContent = 'Kaydediliyor...';
+  btn.disabled = true;
+  const card = document.getElementById('card');
+  const prev = card.style.transform;
+  card.style.transform = 'none';
+  htmlToImage.toJpeg(card, {
+    quality: 0.98, width: 1080, height: 1527,
+    pixelRatio: 3, backgroundColor: '#FBF7EE'
+  }).then(dataUrl => {
+    card.style.transform = prev;
+    const a = document.createElement('a');
+    a.href = dataUrl; a.download = 'gobble-poster.jpg'; a.click();
+    btn.textContent = 'JPEG olarak kaydet';
+    btn.disabled = false;
+  }).catch(() => {
+    card.style.transform = prev;
+    btn.textContent = 'Hata — tekrar dene';
+    btn.disabled = false;
+  });
+}
+</script>
 </body>
 </html>
