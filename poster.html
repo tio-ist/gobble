@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
 <style>
 @page { size: A4 portrait; margin: 0; }
 
@@ -148,19 +149,24 @@ h1 .blue {
   z-index:10;
 }
 
-/* print button */
-.print-btn {
+/* buttons */
+.btn-row {
   position:fixed; bottom:16px; right:16px; z-index:999;
+  display:flex; gap:10px;
+}
+.print-btn, .save-btn {
   background:#0A0A0A; color:#FEE52A; border:none; padding:12px 24px;
   font-size:14px; font-weight:700; cursor:pointer; border-radius:6px;
   letter-spacing:0.05em; text-transform:uppercase; font-family:inherit;
 }
-.print-btn:hover { opacity:0.8; }
+.save-btn { background:#1502FF; color:#fff; }
+.print-btn:hover, .save-btn:hover { opacity:0.8; }
+.save-btn:disabled { opacity:0.5; }
 
 @media print {
   html, body { background:none; padding:0; display:block; }
   #card { transform:none !important; box-shadow:none; }
-  .print-btn { display:none; }
+  .btn-row { display:none; }
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
@@ -445,13 +451,16 @@ h1 .blue {
 
 </div><!-- #card -->
 
-<button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+<div class="btn-row">
+  <button class="print-btn" onclick="window.print()">Print / PDF</button>
+  <button class="save-btn" id="saveBtn" onclick="saveJpeg()">Save high-res JPEG</button>
+</div>
 
 <script>
+const mmToPx = 96 / 25.4;
 function scaleCard() {
   const card = document.getElementById('card');
   const vw = window.innerWidth - 40;
-  const mmToPx = 96 / 25.4;
   const cardPx = 210 * mmToPx;
   const scale = Math.min(1, vw / cardPx);
   card.style.transform = scale < 1 ? `scale(${scale})` : '';
@@ -459,6 +468,31 @@ function scaleCard() {
 }
 scaleCard();
 window.addEventListener('resize', scaleCard);
+
+function saveJpeg() {
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = 'Rendering…'; btn.disabled = true;
+  const card = document.getElementById('card');
+  const prev = card.style.transform;
+  card.style.transform = 'none';
+  // Wait one frame for layout to settle after transform reset
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const w = Math.round(210 * mmToPx);
+    const h = Math.round(297 * mmToPx);
+    htmlToImage.toJpeg(card, {
+      quality: 0.98, width: w, height: h,
+      pixelRatio: 3, backgroundColor: '#FBF7EE'
+    }).then(url => {
+      card.style.transform = prev;
+      const a = document.createElement('a');
+      a.href = url; a.download = 'gobble-poster.jpg'; a.click();
+      btn.textContent = 'Save high-res JPEG'; btn.disabled = false;
+    }).catch(() => {
+      card.style.transform = prev;
+      btn.textContent = 'Error — try again'; btn.disabled = false;
+    });
+  }));
+}
 </script>
 </body>
 </html>
