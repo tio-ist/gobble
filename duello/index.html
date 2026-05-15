@@ -524,90 +524,79 @@ function rrect(x,y,w,h,r){
   ctx.closePath();
 }
 
-// Draw chibi character — big round head, expressive face
+// Draw cute pixel-art character (blocky kawaii style)
 function drawPixelChar(cx, cy, size, active, color) {
-  const u = size / 22;
+  const u = Math.round(size / 18);
   const t = Date.now() / 1000;
-  const bounceY = active
-    ? Math.sin(t * 3.8) * 1.6 * u
-    : Math.sin(t * 1.3) * 0.7 * u;
-  const blush = color === '#FEE52A' ? '#FFB020' : '#FF85AB';
+  const by = active ? Math.sin(t * 3.8) * u : Math.sin(t * 1.3) * u * 0.4;
+  const blush = color === '#FEE52A' ? '#E8941A' : '#FF6BAE';
+  const dark = 'rgba(10,10,10,0.9)';
+  const dim  = 'rgba(255,255,255,0.0)';
 
   ctx.save();
-  ctx.translate(cx, cy + bounceY);
-  ctx.globalAlpha = active ? 1 : 0.5;
+  ctx.translate(Math.round(cx), Math.round(cy + by));
+  ctx.imageSmoothingEnabled = false;
+  ctx.globalAlpha = active ? 1 : 0.42;
 
-  // Drop shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.18)';
-  ctx.beginPath(); ctx.ellipse(0, 8.5*u, 5*u, 1.4*u, 0, 0, Math.PI*2); ctx.fill();
-
-  // Legs
-  const bodyC = active ? color : 'rgba(255,255,255,0.2)';
-  ctx.fillStyle = bodyC;
-  rrect(-4*u, 7.2*u, 2.8*u, 3.2*u, 1*u); ctx.fill();
-  rrect(1.2*u, 7.2*u, 2.8*u, 3.2*u, 1*u); ctx.fill();
-
-  // Body
-  ctx.fillStyle = bodyC;
-  rrect(-4.5*u, 1*u, 9*u, 6.5*u, 2.5*u); ctx.fill();
-
-  // Arms — waving when active, drooping when not
-  ctx.fillStyle = bodyC;
-  if (active) {
-    const w = Math.sin(t * 5.5) * 0.4;
-    ctx.save(); ctx.translate(-4.5*u, 3.5*u); ctx.rotate(-0.55 + w);
-    rrect(-3.8*u, -1.1*u, 3.8*u, 2.2*u, 1.1*u); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.translate(4.5*u, 3.5*u); ctx.rotate(0.55 - w);
-    rrect(0, -1.1*u, 3.8*u, 2.2*u, 1.1*u); ctx.fill(); ctx.restore();
-  } else {
-    rrect(-8.3*u, 3*u, 3.8*u, 2*u, 1*u); ctx.fill();
-    rrect(4.5*u, 3*u, 3.8*u, 2*u, 1*u); ctx.fill();
+  function px(x, y, w, h, c) {
+    if (!c || c === dim) return;
+    ctx.fillStyle = c;
+    ctx.fillRect(x*u, y*u, w*u, h*u);
   }
 
-  // Head (big, round — chibi proportions)
-  const skinC = active ? '#F5CFA0' : 'rgba(255,255,255,0.14)';
-  ctx.fillStyle = skinC;
-  ctx.beginPath(); ctx.arc(0, -6*u, 6.2*u, 0, Math.PI*2); ctx.fill();
+  const C = active ? color : 'rgba(255,255,255,0.22)';
 
-  // Glow halo when active
-  if (active) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = u * 0.75;
-    ctx.globalAlpha = 0.28 + 0.14 * Math.sin(t * 2.8);
-    ctx.beginPath(); ctx.arc(0, -6*u, 7.6*u, 0, Math.PI*2); ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
+  // ── Shadow ──
+  px(-6, 10, 12, 1, 'rgba(0,0,0,0.18)');
 
+  // ── Legs ──
+  px(-5, 7, 3, 3, dark); px(-4, 8, 2, 2, C);
+  px( 2, 7, 3, 3, dark); px( 3, 8, 2, 2, C);
+
+  // ── Arms (raised slightly when active) ──
+  const armY = active ? -1 : 0;
+  px(-9, armY,   4, 3, dark); px(-8, armY+1, 3, 2, C);
+  px( 6, armY,   4, 3, dark); px( 7, armY+1, 3, 2, C);
+
+  // ── Body outline + fill ──
+  px(-7, -6, 14, 13, dark);
+  px(-6, -5, 12, 11, C);
+
+  // ── Highlight (top-left shine) ──
+  const hi = active ? 'rgba(255,255,255,0.55)' : null;
+  px(-5, -4, 4, 1, hi);
+  px(-5, -3, 1, 2, hi);
+
+  // ── Face ──
   if (active) {
-    // Sparkly eyes
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath(); ctx.arc(-2.3*u, -6.6*u, 1.45*u, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc( 2.3*u, -6.6*u, 1.45*u, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(-1.55*u, -7.25*u, 0.6*u, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc( 3.05*u, -7.25*u, 0.6*u, 0, Math.PI*2); ctx.fill();
-    // Blush
-    ctx.fillStyle = blush; ctx.globalAlpha = 0.52;
-    ctx.beginPath(); ctx.ellipse(-4.4*u, -4.5*u, 2.1*u, 1.1*u, 0, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse( 4.4*u, -4.5*u, 2.1*u, 1.1*u, 0, 0, Math.PI*2); ctx.fill();
+    // Angled happy eyes  \  /  with white pixel highlight
+    px(-4, -2, 1, 2, dark); px(-3, -1, 1, 1, dark); // left eye
+    px( 2, -2, 1, 2, dark); px( 3, -1, 1, 1, dark); // right eye
+    px(-4, -2, 1, 1, '#fff');  // left highlight
+    px( 2, -2, 1, 1, '#fff');  // right highlight
+    // Blush pixels
+    ctx.globalAlpha = 0.55;
+    px(-6, 0, 2, 1, blush);
+    px( 5, 0, 2, 1, blush);
     ctx.globalAlpha = 1;
-    // Big smile
-    ctx.strokeStyle = '#CC3333'; ctx.lineWidth = u; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(0, -4.8*u, 2.9*u, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
+    // Smile: bottom bar + corners
+    px(-2, 3, 5, 1, dark);
+    px(-3, 2, 1, 1, dark);
+    px( 3, 2, 1, 1, dark);
   } else {
-    // Sleepy dashes
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = u * 1.1; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-3.4*u, -6.6*u); ctx.lineTo(-1.2*u, -6.6*u); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo( 1.2*u, -6.6*u); ctx.lineTo( 3.4*u, -6.6*u); ctx.stroke();
-    // Neutral mouth
-    ctx.beginPath(); ctx.moveTo(-1.6*u, -4.4*u); ctx.lineTo(1.6*u, -4.4*u); ctx.stroke();
+    // Sleepy horizontal eyes  —  —
+    px(-4, -1, 3, 1, dark);
+    px( 2, -1, 3, 1, dark);
+    // Neutral mouth dot
+    px(-1, 3, 2, 1, dark);
     // Floating zzz
-    const zPhase = (t * 0.9) % 1;
-    ctx.font = `700 ${Math.round(3.2*u)}px "Space Grotesk",Arial`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.globalAlpha = 0.5 * Math.sin(zPhase * Math.PI);
-    ctx.fillText('z z z', 5*u, (-13 - zPhase * 4)*u);
-    ctx.globalAlpha = 0.5;
+    const zp = (t * 0.7) % 1;
+    ctx.font = `900 ${Math.max(8, u*2)}px monospace`;
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.globalAlpha = 0.42 * Math.sin(zp * Math.PI);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('z', 8*u, (-7 - zp*3)*u);
+    ctx.globalAlpha = 0.42;
   }
 
   ctx.restore();
