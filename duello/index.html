@@ -209,7 +209,7 @@ const SCREENS = ['s-countdown','s-result'];
 function showScreen(id) {
   SCREENS.forEach(s=>{ document.getElementById(s).style.display = s===id?'flex':'none'; });
 }
-window.restartWait = ()=>{ if(resultTimer){clearInterval(resultTimer);resultTimer=null;} showScreen(null); waitState='detecting'; faceCount=0; faceInLeft=false; faceInRight=false; stableMs=0; autoCountdown=0; lastCountTick=0; };
+window.restartWait = ()=>{ if(resultTimer){clearInterval(resultTimer);resultTimer=null;} showScreen(null); gameEnding=false; waitState='detecting'; faceCount=0; faceInLeft=false; faceInRight=false; stableMs=0; autoCountdown=0; lastCountTick=0; };
 
 // ── Canvas particles ──────────────────────────────────────────────────────────
 let particles = [];
@@ -327,7 +327,7 @@ document.addEventListener('click', initAudio, { once: true });
 document.addEventListener('touchstart', initAudio, { once: true });
 
 // ── Game state ────────────────────────────────────────────────────────────────
-let gameActive=false;
+let gameActive=false, gameEnding=false;
 let items=[], mouth={}, mouth2={}, timeLeft, lastTime, spawnTimer;
 let streak=0, maxStreak=0, feverTimer=0, feverCount=0, score=0;
 let streak2=0, maxStreak2=0, feverTimer2=0, feverCount2=0, scoreP2=0;
@@ -366,7 +366,7 @@ function updateGame(dt) {
     timeLeft=0; gameActive=false;
     document.getElementById('hud-timer').style.display='none';
     document.getElementById('fever-overlay').className='';
-    setTimeout(endDuello, 700); return;
+    gameEnding=true; setTimeout(endDuello, 700); return;
   }
   document.getElementById('hud-timer').textContent=Math.ceil(timeLeft)+'s';
 
@@ -909,7 +909,8 @@ function mainLoop(ts) {
     return;
   }
 
-  // Waiting loop
+  // Waiting loop — suppressed while game-over transition is in progress
+  if (gameEnding) return;
   if (ts - lastDetectTs >= 80) {
     lastDetectTs = ts;
     try {
