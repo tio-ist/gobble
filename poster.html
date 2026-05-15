@@ -2,19 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
 <style>
-.export-btn {
-  position:fixed; bottom:16px; right:16px; z-index:999;
-  background:#0A0A0A; color:#FEE52A; border:none; padding:12px 24px;
-  font-size:14px; font-weight:700; cursor:pointer; border-radius:6px;
-  letter-spacing:0.05em; text-transform:uppercase;
-}
-.export-btn:hover { opacity:0.8; }
-.export-btn:disabled { opacity:0.5; }
-</style>
-<style>
+@page { size: A4 portrait; margin: 0; }
+
 * { margin:0; padding:0; box-sizing:border-box; }
+
 html, body {
   width:100%; min-height:100vh;
   background:#e0dbd4;
@@ -22,130 +14,152 @@ html, body {
   padding:20px;
   font-family:'Space Grotesk','Helvetica Neue',Arial,sans-serif;
 }
+
 #card {
-  width:1080px; height:1527px;
+  width:210mm; height:297mm;
   background:#FBF7EE;
   overflow:hidden; position:relative;
   flex-shrink:0;
   transform-origin: top center;
 }
+
 .dots {
   position:absolute; inset:0;
   background-image: radial-gradient(circle, rgba(10,10,10,0.08) 1.5px, transparent 1.5px);
-  background-size: 32px 32px;
+  background-size: 6.2mm 6.2mm;
 }
+
 .pf { position:absolute; image-rendering:pixelated; image-rendering:crisp-edges; z-index:1; opacity:0.85; }
 
+/* ── Content ── */
 .content {
   position:absolute; inset:0;
-  padding:56px 72px 0 72px;
+  padding:15mm 18mm 0 18mm;
   display:flex; flex-direction:column;
   z-index:10;
 }
+
 .top-row { display:flex; justify-content:space-between; align-items:flex-start; }
+
 .logo-wrap {
-  width:64px; height:64px; background:#FBF7EE;
-  border:2px solid #0A0A0A; border-radius:10px;
-  box-shadow: 3px 3px 0 #1502FF;
+  width:12mm; height:12mm; background:#FBF7EE;
+  border:0.5mm solid #0A0A0A; border-radius:2mm;
+  box-shadow: 0.8mm 0.8mm 0 #1502FF;
   display:flex; align-items:center; justify-content:center;
   flex-shrink:0;
 }
-.tio-logo { width:46px; height:auto; display:block; }
+.tio-logo { width:9mm; height:auto; display:block; }
+
 .badge {
-  font-size:13px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+  font-size:10pt; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
   white-space:nowrap;
   color:#0A0A0A; background:#FEE52A;
-  padding:10px 20px; border:2px solid #0A0A0A;
-  box-shadow: 4px 4px 0 #0A0A0A;
+  padding:2mm 5mm; border:0.5mm solid #0A0A0A;
+  box-shadow: 1mm 1mm 0 #0A0A0A;
 }
 
 /* title block */
-.title-block { margin-top:52px; }
+.title-block { margin-top:13mm; }
 .pre-title {
-  font-size:19px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
-  color:rgba(10,10,10,0.4); margin-bottom:14px;
-  display:flex; align-items:center; gap:10px;
+  font-size:10pt; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+  color:rgba(10,10,10,0.4); margin-bottom:3.5mm;
+  display:flex; align-items:center; gap:2.5mm;
 }
 .pre-title::before {
-  content:''; display:inline-block; width:28px; height:2px; background:#F83098;
+  content:''; display:inline-block; width:7mm; height:0.5mm; background:#F83098; flex-shrink:0;
 }
 h1 {
-  font-size:130px; font-weight:800; color:#0A0A0A;
+  font-size:74pt; font-weight:800; color:#0A0A0A;
   line-height:0.95; letter-spacing:-0.055em;
 }
 h1 .pink {
   color:#F83098;
   font-family:'Instrument Serif', serif;
   font-style:italic; font-weight:400;
-  font-size:140px;
+  font-size:80pt;
   letter-spacing:-0.04em;
 }
 h1 .blue {
   display:inline-block; background:#1502FF; color:#FBF7EE;
   padding:0.04em 0.1em; line-height:0.9;
-  box-shadow: 5px 5px 0 #0A0A0A;
-  border:2px solid #0A0A0A;
+  box-shadow: 1.2mm 1.2mm 0 #0A0A0A;
+  border:0.5mm solid #0A0A0A;
 }
 .subtitle {
-  margin-top:20px; font-size:22px; font-weight:500; color:#0A0A0A;
+  margin-top:5mm; font-size:12pt; font-weight:500; color:#0A0A0A;
   letter-spacing:-0.015em; line-height:1.45; opacity:0.6;
 }
 
 /* divider */
 .divider {
-  margin: 32px 0;
-  height:2px; background:#0A0A0A; opacity:0.1;
+  margin: 7mm 0;
+  height:0.5mm; background:#0A0A0A; opacity:0.1;
 }
 
 /* how to play */
 .how-row { display:flex; flex-direction:column; gap:0; }
 .how-item {
-  display:flex; align-items:flex-start; gap:20px;
-  font-size:21px; font-weight:600; color:#0A0A0A; letter-spacing:-0.01em;
-  line-height:1.3; padding:15px 0;
-  border-bottom:1.5px solid rgba(10,10,10,0.07);
+  display:flex; align-items:flex-start; gap:4mm;
+  font-size:12pt; font-weight:600; color:#0A0A0A; letter-spacing:-0.01em;
+  line-height:1.3; padding:3.5mm 0;
+  border-bottom:0.4mm solid rgba(10,10,10,0.07);
 }
-.how-item:first-child { border-top:1.5px solid rgba(10,10,10,0.07); }
+.how-item:first-child { border-top:0.4mm solid rgba(10,10,10,0.07); }
 .how-num {
-  width:38px; height:38px; background:#0A0A0A; color:#FEE52A; border-radius:50%;
+  width:8mm; height:8mm; background:#0A0A0A; color:#FEE52A; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
-  font-size:14px; font-weight:800; flex-shrink:0; margin-top:2px;
+  font-size:9pt; font-weight:800; flex-shrink:0; margin-top:0.3mm;
 }
-.how-item span { opacity:0.5; font-weight:400; font-size:16px; display:block; }
+.how-item span { opacity:0.5; font-weight:400; font-size:10pt; display:block; }
 
 /* QR block */
 .qr-section {
-  display:flex; align-items:center; gap:32px;
-  background:#fff; border:2px solid #0A0A0A;
-  padding:28px 32px;
-  box-shadow: 6px 6px 0 #0A0A0A;
+  display:flex; align-items:center; gap:7mm;
+  background:#fff; border:0.5mm solid #0A0A0A;
+  padding:6mm 7mm;
+  box-shadow: 1.5mm 1.5mm 0 #0A0A0A;
 }
 .qr-section img {
-  width:128px; height:128px;
+  width:32mm; height:32mm;
   image-rendering:pixelated;
   display:block; flex-shrink:0;
 }
 .qr-text { flex:1; }
 .qr-cta {
-  font-size:14px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
-  color:rgba(10,10,10,0.4); margin-bottom:6px;
+  font-size:9pt; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  color:rgba(10,10,10,0.4); margin-bottom:1.5mm;
 }
 .qr-url {
-  font-size:40px; font-weight:800; color:#1502FF;
+  font-size:24pt; font-weight:800; color:#1502FF;
   letter-spacing:-0.03em; line-height:1;
-  margin-bottom:8px;
+  margin-bottom:2mm;
 }
 .qr-sub {
-  font-size:15px; font-weight:500; color:#0A0A0A; opacity:0.5;
+  font-size:10pt; font-weight:500; color:#0A0A0A; opacity:0.5;
   line-height:1.4;
 }
 
 /* address — pinned above bottom flowers */
 .made-by {
-  position:absolute; left:72px; bottom:178px;
-  font-size:14px; font-weight:600; letter-spacing:0.06em;
+  position:absolute; left:18mm; bottom:45mm;
+  font-size:8pt; font-weight:600; letter-spacing:0.06em;
   color:rgba(10,10,10,0.3); text-transform:uppercase;
   z-index:10;
+}
+
+/* print button */
+.print-btn {
+  position:fixed; bottom:16px; right:16px; z-index:999;
+  background:#0A0A0A; color:#FEE52A; border:none; padding:12px 24px;
+  font-size:14px; font-weight:700; cursor:pointer; border-radius:6px;
+  letter-spacing:0.05em; text-transform:uppercase; font-family:inherit;
+}
+.print-btn:hover { opacity:0.8; }
+
+@media print {
+  html, body { background:none; padding:0; display:block; }
+  #card { transform:none !important; box-shadow:none; }
+  .print-btn { display:none; }
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
@@ -154,8 +168,8 @@ h1 .blue {
 <div id="card">
   <div class="dots"></div>
 
-  <!-- FLOWER A: Pink daisy — top left, 144px -->
-  <svg class="pf" style="left:20px;top:20px;width:140px;height:164px;" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <!-- FLOWER A: Pink daisy — top left -->
+  <svg class="pf" style="left:3.9mm;top:3.9mm;width:27mm;height:31.9mm;" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="11" y="0" width="2" height="3" fill="#F83098"/>
     <rect x="14" y="1" width="3" height="2" fill="#F83098"/>
     <rect x="15" y="3" width="2" height="2" fill="#F83098"/>
@@ -184,7 +198,7 @@ h1 .blue {
   </svg>
 
   <!-- FLOWER B: Blue tulip — top left area -->
-  <svg class="pf" style="left:164px;top:8px;width:110px;height:130px;" viewBox="0 0 20 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <svg class="pf" style="left:31.9mm;top:1.6mm;width:21.4mm;height:25.3mm;" viewBox="0 0 20 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="7" y="0" width="6" height="2" fill="#1502FF"/>
     <rect x="5" y="2" width="10" height="2" fill="#1502FF"/>
     <rect x="4" y="4" width="12" height="2" fill="#1502FF"/>
@@ -203,7 +217,7 @@ h1 .blue {
   </svg>
 
   <!-- FLOWER C: Yellow sunflower — top right -->
-  <svg class="pf" style="right:20px;top:16px;width:148px;height:148px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <svg class="pf" style="right:3.9mm;top:3.1mm;width:28.8mm;height:28.8mm;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="11" y="0" width="2" height="4" fill="#FEE52A"/>
     <rect x="16" y="1" width="2" height="3" fill="#FEE52A"/>
     <rect x="20" y="4" width="3" height="2" fill="#FEE52A"/>
@@ -236,7 +250,7 @@ h1 .blue {
   </svg>
 
   <!-- FLOWER D: Small pink pansy — top right area -->
-  <svg class="pf" style="right:16px;top:168px;width:96px;height:96px;" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <svg class="pf" style="right:3.1mm;top:32.7mm;width:18.7mm;height:18.7mm;" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="6" y="0" width="4" height="3" fill="#F83098"/>
     <rect x="0" y="6" width="3" height="4" fill="#F83098"/>
     <rect x="13" y="6" width="3" height="4" fill="#F83098"/>
@@ -257,7 +271,7 @@ h1 .blue {
   </svg>
 
   <!-- FLOWER I: Tiny accent — top, near left -->
-  <svg class="pf" style="left:280px;top:24px;width:68px;height:68px;" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <svg class="pf" style="left:54.5mm;top:4.7mm;width:13.2mm;height:13.2mm;" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="5" y="0" width="2" height="2" fill="#F83098"/>
     <rect x="0" y="5" width="2" height="2" fill="#F83098"/>
     <rect x="10" y="5" width="2" height="2" fill="#F83098"/>
@@ -272,7 +286,7 @@ h1 .blue {
   </svg>
 
   <!-- FLOWER E: Blue daisy — bottom left corner -->
-  <svg class="pf" style="left:-28px;bottom:0px;width:132px;height:156px;" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <svg class="pf" style="left:-5.5mm;bottom:0;width:25.7mm;height:30.3mm;" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="11" y="0" width="2" height="3" fill="#1502FF"/>
     <rect x="14" y="1" width="3" height="2" fill="#1502FF"/>
     <rect x="15" y="3" width="2" height="2" fill="#1502FF"/>
@@ -301,7 +315,7 @@ h1 .blue {
   </svg>
 
   <!-- FLOWER F: Yellow tulip — bottom left area -->
-  <svg class="pf" style="left:80px;bottom:-10px;width:106px;height:124px;" viewBox="0 0 20 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <svg class="pf" style="left:15.6mm;bottom:-1.9mm;width:20.6mm;height:24.1mm;" viewBox="0 0 20 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="7" y="0" width="6" height="2" fill="#FEE52A"/>
     <rect x="5" y="2" width="10" height="2" fill="#FEE52A"/>
     <rect x="4" y="4" width="12" height="2" fill="#FEE52A"/>
@@ -320,7 +334,7 @@ h1 .blue {
   </svg>
 
   <!-- FLOWER G: Pink sunflower — bottom right corner -->
-  <svg class="pf" style="right:20px;bottom:44px;width:144px;height:144px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <svg class="pf" style="right:3.9mm;bottom:8.6mm;width:28mm;height:28mm;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="11" y="0" width="2" height="4" fill="#F83098"/>
     <rect x="16" y="1" width="2" height="3" fill="#F83098"/>
     <rect x="20" y="4" width="3" height="2" fill="#F83098"/>
@@ -353,7 +367,7 @@ h1 .blue {
   </svg>
 
   <!-- FLOWER H: Small yellow pansy — bottom right area -->
-  <svg class="pf" style="right:172px;bottom:44px;width:84px;height:84px;" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <svg class="pf" style="right:33.5mm;bottom:8.6mm;width:16.3mm;height:16.3mm;" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="6" y="0" width="4" height="3" fill="#FEE52A"/>
     <rect x="0" y="6" width="3" height="4" fill="#FEE52A"/>
     <rect x="13" y="6" width="3" height="4" fill="#FEE52A"/>
@@ -370,8 +384,8 @@ h1 .blue {
     <rect x="7" y="7" width="2" height="2" fill="#FEE52A"/>
   </svg>
 
-  <!-- FLOWER J: Tiny blue — bottom, near right cluster -->
-  <svg class="pf" style="right:268px;bottom:40px;width:68px;height:68px;" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <!-- FLOWER J: Tiny blue — bottom, near right -->
+  <svg class="pf" style="right:52.2mm;bottom:7.8mm;width:13.2mm;height:13.2mm;" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
     <rect x="5" y="0" width="2" height="2" fill="#1502FF"/>
     <rect x="0" y="5" width="2" height="2" fill="#1502FF"/>
     <rect x="10" y="5" width="2" height="2" fill="#1502FF"/>
@@ -429,41 +443,21 @@ h1 .blue {
   </div>
 
 </div><!-- #card -->
-<button class="export-btn" onclick="exportCard()">Save as JPEG</button>
+
+<button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+
 <script>
 function scaleCard() {
   const card = document.getElementById('card');
   const vw = window.innerWidth - 40;
-  const scale = Math.min(1, vw / 1080);
-  card.style.transform = `scale(${scale})`;
-  document.body.style.minHeight = (1527 * scale + 40) + 'px';
+  const mmToPx = 96 / 25.4;
+  const cardPx = 210 * mmToPx;
+  const scale = Math.min(1, vw / cardPx);
+  card.style.transform = scale < 1 ? `scale(${scale})` : '';
+  document.body.style.minHeight = (297 * mmToPx * scale + 40) + 'px';
 }
 scaleCard();
 window.addEventListener('resize', scaleCard);
-</script>
-<script>
-function exportCard() {
-  const btn = document.querySelector('.export-btn');
-  btn.textContent = 'Kaydediliyor...';
-  btn.disabled = true;
-  const card = document.getElementById('card');
-  const prev = card.style.transform;
-  card.style.transform = 'none';
-  htmlToImage.toJpeg(card, {
-    quality: 0.98, width: 1080, height: 1527,
-    pixelRatio: 3, backgroundColor: '#FBF7EE'
-  }).then(dataUrl => {
-    card.style.transform = prev;
-    const a = document.createElement('a');
-    a.href = dataUrl; a.download = 'gobble-poster.jpg'; a.click();
-    btn.textContent = 'Save as JPEG';
-    btn.disabled = false;
-  }).catch(() => {
-    card.style.transform = prev;
-    btn.textContent = 'Error — try again';
-    btn.disabled = false;
-  });
-}
 </script>
 </body>
 </html>
