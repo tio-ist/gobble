@@ -726,23 +726,22 @@ if (lastResult && st) {
 const API = 'https://api.gobble.tio.ist';
 async function apiFetch(path, opts) {
   try {
-    const r = await fetch(API + path, { ...opts, signal: AbortSignal.timeout(3000) });
+    const r = await fetch(API + path, { ...opts, signal: AbortSignal.timeout(5000) });
     if (!r.ok) throw new Error('bad status');
     return r.json();
   } catch { return null; }
 }
 async function apiGetScores() {
-  const data = await apiFetch('/scores');
-  return data || getScores();
+  return await apiFetch('/scores'); // null if unreachable — callers must handle
 }
 async function apiSaveScore(name, sc) {
-  const local = saveScore(name, sc);
-  const data  = await apiFetch('/scores', {
+  saveScore(name, sc); // local backup only, never shown as global leaderboard
+  const data = await apiFetch('/scores', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ visitorId, name, score: sc }),
   });
-  return data ? { rank: data.rank, scores: data.top10 } : { rank: local.rank, scores: getScores() };
+  return data ? { rank: data.rank, scores: data.top10 } : { rank: null, scores: null };
 }
 
 // ── ML + camera init ──────────────────────────────────────────────────────────
@@ -843,10 +842,6 @@ window._endGameAsync = async function() {
 
   localStorage.setItem(LAST_KEY, JSON.stringify({ score, name: playerName, ts: Date.now() }));
 
-  const allScores = scores || getScores();
-  const myBest = allScores.filter(s => s.name === (playerName||'ANON').toUpperCase().trim().slice(0,12));
-  const isNewBest = myBest.length <= 1 || score >= Math.max(...myBest.map(s => s.score));
-
   const res = document.getElementById('s-result');
   res.className = 'screen ' + (score >= 15 ? 'win-bg' : 'dark-bg');
   res.style.display = 'flex';
@@ -856,18 +851,24 @@ window._endGameAsync = async function() {
   scoreEl.className = 'r-score'; void scoreEl.offsetWidth; scoreEl.classList.add('anim');
 
   const medals = ['🥇','🥈','🥉'];
-  document.getElementById('r-rank').textContent = (rank <= 3 ? medals[rank-1] + ' ' : '') + `RANK #${rank} OF ${allScores.length}`;
-  document.getElementById('r-new-best').style.display = isNewBest ? 'block' : 'none';
+  const rankTxt = rank != null
+    ? (rank <= 3 ? medals[rank-1] + ' ' : '') + `RANK #${rank}${scores ? ' OF ' + scores.length : ''}`
+    : 'SCORE SAVED';
+  document.getElementById('r-rank').textContent = rankTxt;
+  document.getElementById('r-new-best').style.display = 'none';
   document.getElementById('r-stats').innerHTML =
     `<span>MAX STREAK ${maxStreak}</span><span>FEVER ${feverCount}×</span>`;
 
   const el = document.getElementById('lb-preview');
-  if (!allScores.length) { el.innerHTML = '<p class="lb-empty">No scores yet!</p>'; }
-  else {
-    const ts = Date.now();
-    el.innerHTML = allScores.slice(0,5).map((s,i) => `
-      <div class="lb-row ${s.name === (playerName||'ANON').toUpperCase().trim().slice(0,12) && Math.abs(s.ts - ts) < 3000 ? 'me' : ''}">
-        <span class="lb-rank">${['🥇','🥈','🥉'][i]||'#'+(i+1)}</span>
+  if (!scores) {
+    el.innerHTML = '<p class="lb-empty">Leaderboard unavailable — check connection</p>';
+  } else if (!scores.length) {
+    el.innerHTML = '<p class="lb-empty">No scores yet — be the first!</p>';
+  } else {
+    const myName = (playerName||'ANON').toUpperCase().trim().slice(0,12);
+    el.innerHTML = scores.slice(0,5).map((s,i) => `
+      <div class="lb-row ${s.name === myName && rank != null && i === rank-1 ? 'me' : ''}">
+        <span class="lb-rank">${medals[i]||'#'+(i+1)}</span>
         <span class="lb-name">${s.name}</span>
         <span class="lb-pts">${s.score}</span>
       </div>`).join('');
@@ -876,11 +877,14 @@ window._endGameAsync = async function() {
 
 window.showLeaderboard = async () => {
   showScreen('s-lb');
-  const scores = await apiGetScores();
   const el = document.getElementById('lb-full');
+  el.innerHTML = '<p class="lb-empty">Loading…</p>';
+  const scores = await apiGetScores();
+  if (!scores) { el.innerHTML = '<p class="lb-empty">Can\'t reach server — check your connection</p>'; return; }
   if (!scores.length) { el.innerHTML = '<p class="lb-empty">No scores yet — be the first!</p>'; return; }
+  const myName = (playerName||'ANON').toUpperCase().trim().slice(0,12);
   el.innerHTML = scores.map((s,i) => `
-    <div class="lb-row ${s.name===(playerName||'ANON').toUpperCase().trim().slice(0,12)?'me':''}">
+    <div class="lb-row ${s.name===myName?'me':''}">
       <span class="lb-rank">${['🥇','🥈','🥉'][i]||'#'+(i+1)}</span>
       <span class="lb-name">${s.name}</span>
       <span class="lb-pts">${s.score}</span>
